@@ -2,6 +2,17 @@ from Classes import Resource, Task
 
 
 class InstanceReader:
+    """Class to read the instance file and create the instances of resources and tasks.
+    Attributes:
+        path -- path to the instance file
+        tasks -- number of tasks in the instance
+        resources -- number of resources in the instance
+        relations -- number of relations in the instance
+        skill_types -- number of skill types in the instance
+        resources_objects -- list with the lines ready to be parsed by the make_instances_resources method
+        task_objects -- list with the lines ready to be parsed by the make_instances_tasks method
+
+        """
 
     def __init__(self, path):
         self.path = path
