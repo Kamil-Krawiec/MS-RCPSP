@@ -1,9 +1,9 @@
-from instance_reader import InstanceReader
-from Classes import *
+from InstanceReader import InstanceReader
+from Instance import Instance
 
-reader = InstanceReader('instances/100_5_20_9_D3.def')
-reader.read()
+reader = InstanceReader()
+resources, tasks, number_of_relations, number_of_skills = reader.read('instances/100_5_20_9_D3.def')
 
-instance = Instance(reader.make_instances_tasks(), reader.make_instances_resources())
+instance = Instance(tasks, resources, number_of_relations, number_of_skills)
 instance.print_tasks()
 instance.print_resources()
