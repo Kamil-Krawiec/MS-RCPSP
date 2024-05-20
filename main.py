@@ -16,3 +16,6 @@ optimizer = SimpleOptimizer(random_algorithm)
 optimizer.initialize()
 optimizer.optimize()
 
+optimizer.algorithm.population[0].print_schedule()
+
+
