@@ -6,7 +6,8 @@ class SimpleOptimizer(Optimizer):
             super().__init__(algorithm)
 
         def optimize(self):
-            self.evaluate()
+            for i in range(Optimizer.NUM_GENERATIONS):
+                self.evaluate()
 
         def mutation(self, solution):
             pass

@@ -9,7 +9,10 @@ class RandomAlgorithm(Algorithm):
         super().__init__(instance)
 
     def initialize(self, population_size):
-        self.population = [self.random_solution() for _ in range(population_size)]
+        while len(self.population) < population_size:
+            solution = self.random_solution()
+            if self.validate_solution(solution):
+                self.population.append(solution)
 
     def random_solution(self):
         solution = Solution()
@@ -70,4 +73,6 @@ class RandomAlgorithm(Algorithm):
                 resource_availability[selected_resource] = task_end_time
 
         solution.is_changed = True
+        solution.schedule = dict(sorted(solution.schedule.items(), key=lambda x: x[0]))
+
         return solution

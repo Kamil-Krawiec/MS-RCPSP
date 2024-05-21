@@ -7,7 +7,8 @@ class Algorithm(ABC):
 
     def __init__(self, instance: Instance):
         self.instance = instance
-        self.bestSolution = None
+        self.best_solution = None
+        self.worst_solution = None
         self.population = []
 
     @abstractmethod
@@ -18,6 +19,10 @@ class Algorithm(ABC):
     def execute(self):
         for solution in filter(lambda sol: sol.is_changed, self.population):
             solution.set_fitness(self.fitness(solution))
+
+        self.best_solution = min(self.population, key=lambda sol: sol.fitness)
+        self.worst_solution = max(self.population, key=lambda sol: sol.fitness)
+
 
     def fitness(self, solution):
         duration = self.duration(solution)

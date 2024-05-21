@@ -12,7 +12,7 @@ class Solution():
         self.is_changed = True
 
     def __str__(self):
-        representation = ""
+        representation = "fitness: " + str(self.fitness) + "\n"
         for hour, assignments in self.schedule.items():
             representation += f"{hour}"
             for resource, task in assignments:

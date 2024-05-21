@@ -2,13 +2,13 @@ from abc import ABC, abstractmethod
 from abstractClasses.Algorithm import Algorithm
 from Solution import Solution
 
+
 class Optimizer(ABC):
     POPULATION_SIZE = 100
     NUM_GENERATIONS = 100
     CROSSOVER_PROBABILITY = 0.7
     MUTATION_PROBABILITY = 0.1
     TOURNAMENT_SIZE = 5
-    best_solution = None
 
     def __init__(self, algorithm: Algorithm):
         self.algorithm = algorithm
@@ -37,3 +37,6 @@ class Optimizer(ABC):
 
     def evaluate(self):
         self.algorithm.execute()
+
+    def get_statistics(self):
+        return self.algorithm.worst_solution, self.algorithm.best_solution
