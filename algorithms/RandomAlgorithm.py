@@ -20,21 +20,19 @@ class RandomAlgorithm(Algorithm):
         # Dictionary to store start times for tasks
         task_start_times = {}
 
-        # Assign resources to tasks
         for task in sorted_tasks:
-            if not task.predecessor_ids:  # No predecessors
-                hour = 1
-            else:  # Calculate the earliest start hour considering predecessors
-                hour = max(task_start_times[pred] + self.instance.tasks[pred].duration for pred in task.predecessor_ids)
 
-            # Select a random resource that meets the task's skill requirements
+            hours = solution.schedule.keys()
             valid_resources = [
                 res_id for res_id, res in self.instance.resources.items()
-                if res.skills[task.skills_required[0]] >= task.skills_required[1]
+                if res.skills[task.skills_required[0]] >= task.skills_required[
+                    1] and (len(hours) == 0 or res.is_busy_until <= max(hours))
             ]
-
             if valid_resources:
                 resource_id = choice(valid_resources)
+                self.instance.resources[resource_id].is_busy_until = max(hours) + task.duration if hours else task.duration
+                hour = 1 if not hours else max(hours) + 1
+
                 if hour not in solution.schedule:
                     solution.schedule[hour] = []
                 solution.schedule[hour].append((resource_id, task.task_id))
@@ -42,4 +40,3 @@ class RandomAlgorithm(Algorithm):
 
         solution.is_changed = True
         return solution
-
