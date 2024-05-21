@@ -1,6 +1,6 @@
 from abstractClasses.Algorithm import Algorithm
 from Solution import Solution
-from random import randint, choice
+from random import randint, choice, shuffle
 
 
 class RandomAlgorithm(Algorithm):
@@ -14,8 +14,9 @@ class RandomAlgorithm(Algorithm):
     def random_solution(self):
         solution = Solution()
 
-        # Sort tasks by the number of predecessor IDs in ascending order
-        sorted_tasks = sorted(self.instance.tasks.values(), key=lambda x: len(x.predecessor_ids))
+        # Shuffle tasks to introduce randomness
+        tasks = list(self.instance.tasks.values())
+        shuffle(tasks)
 
         # Dictionary to store the end times for tasks
         task_end_times = {}
@@ -23,25 +24,40 @@ class RandomAlgorithm(Algorithm):
         # Dictionary to store resource availability times
         resource_availability = {res_id: 0 for res_id in self.instance.resources.keys()}
 
-        for task in sorted_tasks:
+        while tasks:
+            task = tasks.pop(0)
+
             if not task.predecessor_ids:  # No predecessors
                 earliest_start = 0
-            else:  # Calculate the earliest start time considering predecessors
-                earliest_start = max(task_end_times.get(pred, 0) for pred in task.predecessor_ids)
+            else:
+                # Check if all predecessors have been scheduled
+                unscheduled_predecessors = [pred for pred in task.predecessor_ids if pred not in task_end_times]
+                if unscheduled_predecessors:
+                    # Push the current task back and schedule predecessors first
+                    tasks.append(task)
+                    shuffle(tasks)  # Shuffle tasks to introduce randomness in task scheduling
+                    continue  # Skip scheduling the current task now
 
-            # Find the earliest time a resource is available after the task's earliest start time
-            earliest_available_time = float('inf')
-            selected_resource = None
+                # Calculate the earliest start time considering predecessors
+                earliest_start = max(task_end_times[pred] for pred in task.predecessor_ids)
 
-            for res_id, res in self.instance.resources.items():
-                if res.skills[task.skills_required[0]] >= task.skills_required[1]:
-                    available_time = max(earliest_start, resource_availability[res_id])
-                    if available_time < earliest_available_time:
-                        earliest_available_time = available_time
-                        selected_resource = res_id
+            # Find all resources that can perform the task
+            valid_resources = [
+                res_id for res_id, res in self.instance.resources.items()
+                if res.skills[task.skills_required[0]] >= task.skills_required[1]
+            ]
+
+            # Shuffle the valid resources to introduce randomness
+            shuffle(valid_resources)
+
+            for res_id in valid_resources:
+                available_time = max(earliest_start, resource_availability[res_id])
+                if available_time < float('inf'):
+                    selected_resource = res_id
+                    earliest_available_time = available_time
+                    break
 
             if selected_resource is not None:
-
                 # Assign the task to the selected resource at the earliest available time
                 hour = earliest_available_time
                 if hour not in solution.schedule:
