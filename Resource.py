@@ -11,10 +11,12 @@ class Resource:
         self.resource_id = int(resource_id)
         self.salary = float(salary)
         self.skills = self.parse_skills(skills, skills_number)
+        self.is_busy_until = 0
 
     def __str__(self):
         return f"Resource {self.resource_id} with salary {self.salary} and skills {self.skills}"
-    
+
+
     def parse_skills(self, skills,skills_number):
         skills_list = [-1] * skills_number
         x = iter(skills.split())
