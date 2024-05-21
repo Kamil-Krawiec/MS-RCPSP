@@ -65,9 +65,8 @@ class Algorithm(ABC):
             for resource_id, task_id in assignments:
                 resource = self.instance.resources[resource_id]
                 task = self.instance.tasks[task_id]
-                for skill_index, min_value in task.skills_required:
-                    if resource.skills[skill_index] < min_value:
-                        return False
+                if not resource.skills[task.skills_required[0]] >= task.skills_required[1]:
+                    return False
         return True
 
     def validate_precedence_relations(self, solution):

@@ -12,7 +12,7 @@ class InstanceReader:
         tasks = []
         with open(path, 'r') as file:
             while (line := file.readline()) != '':
-                if line == "General characteristics:\n":
+                if line.startswith("General"):
                     _, _, number_of_relations, self.number_of_skills = [
                         int(file.readline().split(':')[-1]) for _ in range(4)
                     ]
