@@ -42,7 +42,7 @@ class Algorithm(ABC):
         return max(solution.schedule.keys())
 
     def execute_solution(self, solution):
-        solution.set_fitness(fitness(solution))
+        solution.set_fitness(self.fitness(solution))
 
     def validate_solution(self, solution):
         return (self.validate_assignments(solution) and
