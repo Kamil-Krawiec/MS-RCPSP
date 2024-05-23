@@ -59,12 +59,8 @@ class AntColonyOptimizer:
         resource_availability = {r.resource_id: 0 for r in self.instance.resources.values()}
 
         while tasks_to_schedule:
-            task = self.select_next_task(tasks_to_schedule, scheduled_tasks)
-            if task is None:
-                return None
-
-            resource = self.select_resource_for_task(task, resource_availability)
-            if resource is None:
+            task, resource = self.select_task_and_resource(tasks_to_schedule, scheduled_tasks)
+            if task is None or resource is None:
                 return None
 
             task_start_times = {}
@@ -75,7 +71,6 @@ class AntColonyOptimizer:
             predecessor_end_times = [task_start_times[p] + self.instance.tasks[p].duration for p in task.predecessor_ids]
             start_time = max(resource_availability[resource.resource_id], max(predecessor_end_times, default=0)+1)
 
-            # Schedule the task at the calculated start time
             solution.schedule[start_time].append((resource.resource_id, task.task_id))
             resource_availability[resource.resource_id] = start_time + task.duration
             scheduled_tasks.add(task.task_id)
@@ -118,6 +113,31 @@ class AntColonyOptimizer:
         if not available_resources:
             return None
         return min(available_resources, key=lambda r: resource_availability[r.resource_id])
+
+    def select_task_and_resource(self, tasks, scheduled_tasks):
+        best_task = None
+        best_resource = None
+        best_score = float('inf')
+
+        for task in tasks:
+            if all(pred in scheduled_tasks for pred in task.predecessor_ids):
+                for resource in self.instance.resources.values():
+                    if self.is_resource_suitable(resource, task):
+                        
+                        score = self.calculate_score(task, resource)
+
+                        if score < best_score:
+                            best_score = score
+                            best_task = task
+                            best_resource = resource
+
+        return best_task, best_resource
+
+    def calculate_score(self, task, resource):
+        duration_factor = task.duration
+        cost_factor = resource.salary
+
+        return duration_factor * cost_factor
 
     def is_resource_suitable(self, resource, task):
         skill, level = task.skills_required
