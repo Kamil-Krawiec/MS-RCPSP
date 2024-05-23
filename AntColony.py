@@ -60,6 +60,9 @@ class AntColonyOptimizer:
 
         while tasks_to_schedule:
             task, resource = self.select_task_and_resource(tasks_to_schedule, scheduled_tasks)
+            # for only duration (without cost) much better is previous solution
+            # which uses select_next_task and select_task_resource separetly
+            # this one returns much worse solutions than random for only duration
             if task is None or resource is None:
                 return None
 
