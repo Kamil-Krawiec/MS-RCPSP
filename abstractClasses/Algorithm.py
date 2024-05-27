@@ -23,7 +23,6 @@ class Algorithm(ABC):
         self.best_solution = min(self.population, key=lambda sol: sol.fitness)
         self.worst_solution = max(self.population, key=lambda sol: sol.fitness)
 
-
     def fitness(self, solution):
         duration = self.duration(solution)
         cost = self.cost(solution)
