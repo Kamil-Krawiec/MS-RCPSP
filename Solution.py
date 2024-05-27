@@ -6,9 +6,21 @@ class Solution():
         self.schedule = OrderedDict()
         self.fitness = 0
         self.is_changed = True
+        # multiobjective
+        self.duration = 0
+        self.cost = 0
+        self.crowding_distance = 0
 
     def set_fitness(self, fitness_value):
         self.fitness = fitness_value
+        self.is_changed = True
+
+    def set_duration(self, duration):
+        self.duration = duration
+        self.is_changed = True
+
+    def set_cost(self, cost):
+        self.cost = cost
         self.is_changed = True
 
     def __str__(self):
