@@ -31,7 +31,7 @@ class Optimizer(ABC):
         # method to cross over the solution
         pass
 
-    def selection(self, population: list):
+    def selection(self):
         # method to select the best solutions from the population
         pass
 
