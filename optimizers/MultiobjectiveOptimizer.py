@@ -1,5 +1,5 @@
 from abstractClasses.Optimizer import Optimizer
-
+import random
 
 class MultiobjectiveOptimizer(Optimizer):
 
@@ -8,23 +8,22 @@ class MultiobjectiveOptimizer(Optimizer):
 
     def optimize(self):
         for generation in range(Optimizer.NUM_GENERATIONS):
-            # Evaluate the population
             self.evaluate()
+            self.non_dominated_sort()
 
     def non_dominated_sort(self):
         sorted_population = []
         population_grouped_by_front = []
         rest_of_the_population = [sol for sol in self.algorithm.population if sol not in sorted_population]
-
+        rank = 0
         while rest_of_the_population:
             rest_of_the_population = [sol for sol in self.algorithm.population if sol not in sorted_population]
 
-            sorted_population.extend(self.pareto_front(rest_of_the_population))
-            population_grouped_by_front.append(self.pareto_front(rest_of_the_population))
-
-        # Calculate crowding distance for solutions in each Pareto front group
-        for front in population_grouped_by_front:
-            self.calculate_crowding_distance(front)
+            current_pareto_front = self.pareto_front(rest_of_the_population, rank)
+            sorted_population.extend(current_pareto_front)
+            population_grouped_by_front.append(current_pareto_front)
+            self.calculate_crowding_distance(current_pareto_front)
+            rank += 1
 
     def calculate_crowding_distance(self, pareto_front):
         num_objectives = 2  # Assuming there are two objectives: duration and cost
@@ -61,10 +60,18 @@ class MultiobjectiveOptimizer(Optimizer):
     def crossover(self, solution, solution2):
         pass
 
-    def selection(self, population):
-        pass
+    def selection(self):
+        """It means that for two individuals with differing nondominated ranks (different layers),
+        the solution with the lower rank (layer) is preferred.
+        Otherwise, for two solutions of the same layer,
+        the solution placed in the region with a lower concentration of solutions is selected.
+        This is the concept of dominated sorting algorithm.
+        """
+        tournament = random.sample(self.algorithm.population, self.TOURNAMENT_SIZE)
+        tournament.sort(key=lambda x: (x.rank, -x.crowding_distance))
+        return tournament[0]
 
-    def pareto_front(self, population=None):
+    def pareto_front(self, population=None, rank=0):
         population = population if population else self.algorithm.population
 
         pareto_front = []
@@ -77,6 +84,7 @@ class MultiobjectiveOptimizer(Optimizer):
                     is_pareto = False
                     break
             if is_pareto:
+                solution.rank = rank
                 pareto_front.append(solution)
 
         return pareto_front

@@ -10,6 +10,7 @@ class Solution():
         self.duration = 0
         self.cost = 0
         self.crowding_distance = 0
+        self.rank = -1
 
     def set_fitness(self, fitness_value):
         self.fitness = fitness_value
@@ -23,14 +24,18 @@ class Solution():
         self.cost = cost
         self.is_changed = True
 
+    # def __str__(self):
+    #     representation = "fitness: " + str(self.fitness) + "\n"
+    #     for hour, assignments in self.schedule.items():
+    #         representation += f"{hour}"
+    #         for resource, task in assignments:
+    #             representation += f" {resource}-{task}"
+    #         representation += "\n"
+    #     return representation
+
     def __str__(self):
-        representation = "fitness: " + str(self.fitness) + "\n"
-        for hour, assignments in self.schedule.items():
-            representation += f"{hour}"
-            for resource, task in assignments:
-                representation += f" {resource}-{task}"
-            representation += "\n"
-        return representation
+        return f"rank: {self.rank} duration: {self.duration} cost: {self.cost} crowding_distance: {self.crowding_distance}"
+
 
     def save_to_file(self, file_name):
         with open("./solutions/"+file_name+'.sol', 'w') as file:

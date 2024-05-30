@@ -15,5 +15,5 @@ class SimpleOptimizer(Optimizer):
         def crossover(self, solution, solution2):
             pass
 
-        def selection(self, population):
+        def selection(self):
             pass
