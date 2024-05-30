@@ -19,6 +19,8 @@ class Algorithm(ABC):
     def execute(self):
         for solution in filter(lambda sol: sol.is_changed, self.population):
             solution.set_fitness(self.fitness(solution))
+            solution.set_duration(self.duration(solution))
+            solution.set_cost(self.cost(solution))
 
         self.best_solution = min(self.population, key=lambda sol: sol.fitness)
         self.worst_solution = max(self.population, key=lambda sol: sol.fitness)
