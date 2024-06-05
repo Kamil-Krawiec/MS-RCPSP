@@ -5,14 +5,14 @@ from optimizers import SimpleOptimizer, MultiobjectiveOptimizer
 import matplotlib.pyplot as plt
 
 
-def plot():
+def plot(multiobjective_optimizer_arg):
     # Plotting
     # Collect duration and cost values
-    durations = [solution.duration for solution in multiobjective_optimizer.algorithm.population]
-    costs = [solution.cost for solution in multiobjective_optimizer.algorithm.population]
+    durations = [solution.duration for solution in multiobjective_optimizer_arg.algorithm.population]
+    costs = [solution.cost for solution in multiobjective_optimizer_arg.algorithm.population]
 
     # Get Pareto front solutions
-    pareto_front = multiobjective_optimizer.pareto_front()
+    pareto_front = multiobjective_optimizer_arg.pareto_front()
     pareto_durations = [solution.duration for solution in pareto_front]
     pareto_costs = [solution.cost for solution in pareto_front]
 
@@ -33,7 +33,7 @@ def plot():
     plt.show()
 
 
-instance_name = '200_40_90_9.def'
+instance_name = '200_20_150_9_D5.def'
 
 reader = InstanceReader()
 resources, tasks, number_of_relations, number_of_skills = reader.read(f'instances/{instance_name}')
@@ -45,16 +45,19 @@ optimizer = SimpleOptimizer.SimpleOptimizer(random_algorithm)
 
 optimizer.initialize()
 optimizer.optimize()
-print("worst " + str(optimizer.get_statistics()[0].fitness))
-print("best " + str(optimizer.get_statistics()[1].fitness))
+print("best duration:" + str(optimizer.get_statistics()[1].duration)+" best cost:"+str(optimizer.get_statistics()[1].cost))
 
 multiobjective_algorithm = MultiobjectiveAlgorithm.MultiobjectiveAlgorithm(instance)
 multiobjective_optimizer = MultiobjectiveOptimizer.MultiobjectiveOptimizer(multiobjective_algorithm)
 
 multiobjective_optimizer.initialize()
-multiobjective_optimizer.optimize()
-multiobjective_optimizer.non_dominated_sort()
-print()
+multiobjective_optimizer.evaluate()
+plot(multiobjective_optimizer)
 
+multiobjective_optimizer.optimize()
+
+plot(multiobjective_optimizer)
+
+multiobjective_optimizer.algorithm.population[0].save_to_file(instance_name)
 
 

@@ -36,9 +36,8 @@ class Solution():
     def __str__(self):
         return f"rank: {self.rank} duration: {self.duration} cost: {self.cost} crowding_distance: {self.crowding_distance}"
 
-
     def save_to_file(self, file_name):
-        with open("./solutions/"+file_name+'.sol', 'w') as file:
+        with open("./solutions/" + file_name + '.sol', 'w') as file:
             file.write("Hour 	 Resource assignments (resource ID - task ID)\n")
             for hour, assignments in self.schedule.items():
                 file.write(f"{hour}")

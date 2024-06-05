@@ -1,6 +1,8 @@
-from abstractClasses.Optimizer import Optimizer
-from Solution import Solution
 import random
+
+from Solution import Solution
+from abstractClasses.Optimizer import Optimizer
+
 
 class MultiobjectiveOptimizer(Optimizer):
 
@@ -16,22 +18,23 @@ class MultiobjectiveOptimizer(Optimizer):
             while len(new_population) < Optimizer.POPULATION_SIZE:
                 parent1 = self.selection()
                 parent2 = self.selection()
-                if(random.random() < Optimizer.CROSSOVER_PROBABILITY):
-                    child1,child2 = self.crossover(parent1, parent2)
+                if random.random() < Optimizer.CROSSOVER_PROBABILITY:
+                    child1 = self.crossover(parent1, parent2)
+                    child2 = self.crossover(parent2, parent1)
                 else:
                     child1 = parent1
                     child2 = parent2
-
                 # if random.random() < Optimizer.MUTATION_PROBABILITY:
                 #     self.mutation(child1)
                 #     self.mutation(child2)
                 # else:
                 #     child1 = parent1
                 #     child2 = parent2
-
                 new_population.append(child1)
                 new_population.append(child2)
 
+            self.algorithm.population = new_population
+        self.evaluate()
 
     def non_dominated_sort(self):
         sorted_population = []
@@ -79,93 +82,75 @@ class MultiobjectiveOptimizer(Optimizer):
     def mutation(self, solution):
         pass
 
+    # DHGA crossover proposed by Mehdi Deiranlou and Fariborz Jolai in 2009
     def crossover(self, parent1, parent2):
-        # Multi-Skill Precedence Preserving Crossover (MS-PPX)
-        def ms_ppx_crossover(parent_x, parent_y):
-            child = Solution()
+        child = Solution()
 
-            # Initialize
-            tasks = self.algorithm.instance.tasks
-            resources = self.algorithm.instance.resources
-            num_tasks = len(tasks)
-            selection_vector = [random.randint(0, 1) for _ in range(num_tasks)]
+        schedule1 = [(hour, resource, task) for hour, assignments in parent1.schedule.items() for resource, task in
+                     assignments]
 
-            # Extract gene sequences from both parents
-            genes_x = [(hour, resource, task) for hour, assignments in parent_x.schedule.items() for resource, task in
-                       assignments]
-            genes_y = [(hour, resource, task) for hour, assignments in parent_y.schedule.items() for resource, task in
-                       assignments]
+        schedule2 = [(hour, resource, task) for hour, assignments in parent2.schedule.items() for resource, task in
+                     assignments]
 
-            scheduled_tasks = set()
-            resource_availability = {res_id: 0 for res_id in resources.keys()}
-            task_end_times = {}
+        crossover_start_hour = random.choice(schedule1)[0]
+        crossover_end_hour = random.choice([x for x in schedule1 if x[0] != crossover_start_hour])[0]
 
-            # Function to schedule a task ensuring precedence and skill requirements
-            def schedule_task(resource, task_id):
-                task = tasks[task_id]
-                if task_id in scheduled_tasks:
-                    return  # Task already scheduled
+        if crossover_start_hour > crossover_end_hour:
+            crossover_start_hour, crossover_end_hour = crossover_end_hour, crossover_start_hour
 
-                # Ensure all predecessors are scheduled
-                for pred in task.predecessor_ids:
-                    if pred not in scheduled_tasks:
-                        if pred in [t for _, _, t in genes_x]:
-                            pred_gene = next(g for g in genes_x if g[2] == pred)
-                            genes_x.remove(pred_gene)
-                            schedule_task(pred_gene[1], pred_gene[2])
-                        elif pred in [t for _, _, t in genes_y]:
-                            pred_gene = next(g for g in genes_y if g[2] == pred)
-                            genes_y.remove(pred_gene)
-                            schedule_task(pred_gene[1], pred_gene[2])
+        first_part = [(x[1], x[2]) for x in schedule1 if crossover_start_hour >= x[0]]
+        second_part = [(x[1], x[2]) for x in schedule1 if crossover_end_hour <= x[0]]
 
-                # Determine the earliest start time for the task
-                earliest_start = max(
-                    task_end_times.get(pred, 0) for pred in task.predecessor_ids) if task.predecessor_ids else 0
-                available_time = max(earliest_start, resource_availability[resource])
+        performed_tasks = [x[1] for x in first_part] + [x[1] for x in second_part]
 
-                # Assign the task to the selected resource at the earliest available time
-                if available_time < float('inf'):
-                    hour = available_time
-                    if hour not in child.schedule:
-                        child.schedule[hour] = []
-                    child.schedule[hour].append((resource, task.task_id))
-                    scheduled_tasks.add(task.task_id)
+        middle_part = [(x[1], x[2]) for x in schedule2 if x[2] not in performed_tasks]
 
-                    # Update end times and resource availability
-                    task_end_time = hour + task.duration
-                    task_end_times[task.task_id] = task_end_time
-                    resource_availability[resource] = task_end_time
+        child_schedule = first_part + middle_part + second_part
 
-            # Perform crossover
-            for i in range(num_tasks):
-                if selection_vector[i] == 0:
-                    if genes_x:
-                        gene = genes_x.pop(0)
-                        schedule_task(gene[1], gene[2])
-                        genes_y = [g for g in genes_y if g[2] != gene[2]]  # Remove scheduled task from genes_y
-                else:
-                    if genes_y:
-                        gene = genes_y.pop(0)
-                        schedule_task(gene[1], gene[2])
-                        genes_x = [g for g in genes_x if g[2] != gene[2]]  # Remove scheduled task from genes_x
+        child.schedule = self.update_schedule(child_schedule)
+        child.is_changed = True
 
-            # Handle remaining genes
-            for gene in genes_x:
-                schedule_task(gene[1], gene[2])
-            for gene in genes_y:
-                schedule_task(gene[1], gene[2])
+        return child
 
-            # Finalize child solution
-            child.is_changed = True
-            child.schedule = dict(sorted(child.schedule.items(), key=lambda x: x[0]))
+    def update_schedule(self, ordered_list):
+        # Dictionary to store the end times for tasks
+        task_end_times = {}
 
-            return child
+        instance = self.algorithm.instance
 
-        # Create two children using MS-PPX
-        child1 = ms_ppx_crossover(parent1, parent2)
-        child2 = ms_ppx_crossover(parent2, parent1)
+        # Dictionary to store resource availability times
+        resource_availability = {res_id: 0 for res_id in instance.resources.keys()}
 
-        return child1, child2
+        # Dictionary to store the final schedule with hours
+        schedule = {}
+
+        for resource, task_id in ordered_list:
+            task = instance.tasks[task_id]
+
+            if not task.predecessor_ids:  # No predecessors
+                earliest_start = 0
+            else:
+                # Calculate the earliest start time considering predecessors
+                earliest_start = max(task_end_times[pred] for pred in task.predecessor_ids)
+
+            available_time = max(earliest_start, resource_availability[resource])
+
+            # Assign the task to the selected resource at the earliest available time
+            if available_time not in schedule:
+                schedule[available_time] = []
+            schedule[available_time].append((resource, task_id))
+
+            # Update the end time for the task and the availability time for the resource
+            task_end_time = available_time + task.duration
+            task_end_times[task_id] = task_end_time
+            resource_availability[resource] = task_end_time
+
+        # Sort the schedule by hour
+        schedule = dict(sorted(schedule.items()))
+
+        return schedule
+
+    # end of crossover
 
     def selection(self):
         """It means that for two individuals with differing nondominated ranks (different layers),
