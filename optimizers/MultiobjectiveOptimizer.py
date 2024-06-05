@@ -24,12 +24,12 @@ class MultiobjectiveOptimizer(Optimizer):
                 else:
                     child1 = parent1
                     child2 = parent2
-                # if random.random() < Optimizer.MUTATION_PROBABILITY:
-                #     self.mutation(child1)
-                #     self.mutation(child2)
-                # else:
-                #     child1 = parent1
-                #     child2 = parent2
+                if random.random() < Optimizer.MUTATION_PROBABILITY:
+                    self.mutationSwap(child1)
+                    self.mutationSwap(child2)
+                else:
+                    child1 = parent1
+                    child2 = parent2
                 new_population.append(child1)
                 new_population.append(child2)
 
@@ -51,7 +51,7 @@ class MultiobjectiveOptimizer(Optimizer):
             rank += 1
 
     def calculate_crowding_distance(self, pareto_front):
-        num_objectives = 2  # Assuming there are two objectives: duration and cost
+        num_objectives = 2
         for solution in pareto_front:
             solution.crowding_distance = 0
 
@@ -79,10 +79,125 @@ class MultiobjectiveOptimizer(Optimizer):
                          getattr(pareto_front[i - 1], 'duration' if objective_index == 0 else 'cost')) / range_value
                 )
 
+    # Conflict Avoidance Mutation (CAM) proposed by Pawel B. Myszkowski, Marek E. Skowronski in 2013 =================================================================
     def mutation(self, solution):
-        pass
+        instance = self.algorithm.instance
 
-    # DHGA crossover proposed by Mehdi Deiranlou and Fariborz Jolai in 2009
+        # Create a copy of resource availability based on the current schedule
+        resource_availability = {res_id: 0 for res_id in instance.resources.keys()}
+        for hour, assignments in solution.schedule.items():
+            for resource, task_id in assignments:
+                task = instance.tasks[task_id]
+                resource_availability[resource] = max(resource_availability[resource], hour + task.duration)
+
+        # Get the list of tasks for each resource
+        resource_task_mapping = {}
+        for hour, assignments in solution.schedule.items():
+            for resource, task_id in assignments:
+                if resource not in resource_task_mapping:
+                    resource_task_mapping[resource] = []
+                resource_task_mapping[resource].append((hour, task_id))
+
+        ordered_list = []
+
+        # Process each resource's task list to find conflicts
+        for resource, tasks in resource_task_mapping.items():
+            # Sort tasks by their start times
+            tasks.sort(key=lambda x: x[0])
+
+            # Identify pairs of assignments with conflicts
+            for i in range(len(tasks) - 1):
+                hour1, task_id1 = tasks[i]
+                hour2, task_id2 = tasks[i + 1]
+                task1 = instance.tasks[task_id1]
+                task2 = instance.tasks[task_id2]
+
+                finish_time1 = hour1 + task1.duration
+
+                # If there is a conflict between task1 and task2
+                if hour2 - finish_time1 == 0:
+                    # Choose the task with more capable resources to be reassigned
+                    capable_resources1 = [res_id for res_id, res in instance.resources.items()
+                                          if res.skills[task1.skills_required[0]] >= task1.skills_required[1]]
+                    capable_resources2 = [res_id for res_id, res in instance.resources.items()
+                                          if res.skills[task2.skills_required[0]] >= task2.skills_required[1]]
+
+                    if len(capable_resources1) > len(capable_resources2):
+                        task_to_reassign = task_id1
+                        other_task = task_id2
+                        other_task_hour = hour2
+                        current_task_hour = hour1
+                    elif len(capable_resources1) < len(capable_resources2):
+                        task_to_reassign = task_id2
+                        other_task = task_id1
+                        other_task_hour = hour1
+                        current_task_hour = hour2
+                    else:
+                        task_to_reassign = random.choice([task_id1, task_id2])
+                        if task_to_reassign == task_id1:
+                            other_task = task_id2
+                            other_task_hour = hour2
+                            current_task_hour = hour1
+                        else:
+                            other_task = task_id1
+                            other_task_hour = hour1
+                            current_task_hour = hour2
+
+                    new_resource = min(capable_resources1 if task_to_reassign == task_id1 else capable_resources2,
+                                       key=lambda res_id: (len(resource_task_mapping.get(res_id, [])),
+                                                           resource_availability[res_id]))
+
+                    # Reassign the task to the new resource
+                    available_time = max(resource_availability[new_resource],
+                                         other_task_hour + instance.tasks[other_task].duration)
+
+                    for res, task in solution.schedule[current_task_hour]:
+                        if task == task_to_reassign:
+                            solution.schedule[current_task_hour].remove((res, task))
+                            solution.schedule[current_task_hour].append((new_resource, task))
+                            break
+
+                    # Update resource availability
+                    task_end_time = available_time + instance.tasks[task_to_reassign].duration
+                    resource_availability[new_resource] = task_end_time
+
+        # Add remaining tasks to the ordered list
+        for hour, assignments in solution.schedule.items():
+            for resource, task_id in assignments:
+                if (resource, task_id) not in ordered_list:
+                    ordered_list.append((resource, task_id))
+
+        # Update the schedule using the ordered list
+        solution.schedule = self.update_schedule(ordered_list)
+        solution.is_changed = True
+
+    # end of mutation ==================================================================================================================================
+
+    def mutationSwap(self, solution):
+        instance = self.algorithm.instance
+
+        random_task = instance.tasks[random.choice(list(instance.tasks.keys()))]
+
+        capable_resources1 = [res_id for res_id, res in instance.resources.items()
+                              if res.skills[random_task.skills_required[0]] >= random_task.skills_required[1]]
+
+        if len(capable_resources1) > 0:
+            for hour, assignments in solution.schedule.items():
+                for resource, task_id in assignments:
+                    if random_task == task_id:
+                        solution.schedule[hour].remove((resource, task_id))
+                        new_resource = random.choice(capable_resources1)
+                        solution.schedule[hour].append((new_resource, task_id))
+                        solution.is_changed = True
+                        break
+
+        ordered_list = []
+        for hour, assignments in solution.schedule.items():
+            for resource, task_id in assignments:
+                ordered_list.append((resource, task_id))
+        solution.schedule = self.update_schedule(ordered_list)
+
+    # DHGA crossover proposed by Mehdi Deiranlou and Fariborz Jolai in 2009 =================================================================
     def crossover(self, parent1, parent2):
         child = Solution()
 
@@ -150,7 +265,7 @@ class MultiobjectiveOptimizer(Optimizer):
 
         return schedule
 
-    # end of crossover
+    # end of crossover ==================================================================================================================================
 
     def selection(self):
         """It means that for two individuals with differing nondominated ranks (different layers),
