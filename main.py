@@ -33,7 +33,7 @@ def plot(multiobjective_optimizer_arg):
     plt.show()
 
 
-instance_name = '200_20_150_9_D5.def'
+instance_name = '200_40_45_9.def'
 
 reader = InstanceReader()
 resources, tasks, number_of_relations, number_of_skills = reader.read(f'instances/{instance_name}')
