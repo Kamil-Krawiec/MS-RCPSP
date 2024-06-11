@@ -33,7 +33,7 @@ def plot(multiobjective_optimizer_arg):
     plt.show()
 
 
-instance_name = '200_40_45_9.def'
+instance_name = '200_20_150_9_D5.def'
 
 reader = InstanceReader()
 resources, tasks, number_of_relations, number_of_skills = reader.read(f'instances/{instance_name}')
@@ -52,12 +52,22 @@ multiobjective_optimizer = MultiobjectiveOptimizer.MultiobjectiveOptimizer(multi
 
 multiobjective_optimizer.initialize()
 multiobjective_optimizer.evaluate()
+
 plot(multiobjective_optimizer)
 
 multiobjective_optimizer.optimize()
 
 plot(multiobjective_optimizer)
 
-multiobjective_optimizer.algorithm.population[0].save_to_file(instance_name)
+sol = multiobjective_optimizer.algorithm.population[0]
+sol.save_to_file(instance_name)
+
+print(multiobjective_optimizer.algorithm.validate_solution(sol))
+print(multiobjective_optimizer.algorithm.validate_skills(sol))
+print(multiobjective_optimizer.algorithm.validate_assignments(sol))
+print(multiobjective_optimizer.algorithm.validate_conflicts(sol))
+print(multiobjective_optimizer.algorithm.validate_precedence_relations(sol))
+
+
 
 
