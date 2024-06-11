@@ -19,14 +19,23 @@ class MultiobjectiveOptimizer(Optimizer):
                 parent1 = self.selection()
                 parent2 = self.selection()
                 if random.random() < Optimizer.CROSSOVER_PROBABILITY:
-                    child1 = self.crossover(parent1, parent2)
-                    child2 = self.crossover(parent2, parent1)
+                    # child1 = self.crossover(parent1, parent2)
+                    # child2 = self.crossover(parent2, parent1)
+                    child1 = self.PMXCrossover(parent1, parent2)
+                    child2 = self.PMXCrossover(parent2, parent1)
                 else:
                     child1 = parent1
                     child2 = parent2
+
                 if random.random() < Optimizer.MUTATION_PROBABILITY:
-                    self.mutationSwap(child1)
-                    self.mutationSwap(child2)
+                    # self.mutationSwap(child1)
+                    # self.mutationSwap(child2)
+
+                    # self.mutation(child1)
+                    # self.mutation(child2)
+
+                    self.mutationTheCheapest(child1)
+                    self.mutationTheCheapest(child2)
                 else:
                     child1 = parent1
                     child2 = parent2
@@ -173,29 +182,64 @@ class MultiobjectiveOptimizer(Optimizer):
 
     # end of mutation ==================================================================================================================================
 
+    # SWAP mutation ==================================================================================================================================
     def mutationSwap(self, solution):
         instance = self.algorithm.instance
 
         random_task = instance.tasks[random.choice(list(instance.tasks.keys()))]
 
-        capable_resources1 = [res_id for res_id, res in instance.resources.items()
-                              if res.skills[random_task.skills_required[0]] >= random_task.skills_required[1]]
+        capable_resources = [res_id for res_id, res in instance.resources.items()
+                             if res.skills[random_task.skills_required[0]] >= random_task.skills_required[1]]
 
-        if len(capable_resources1) > 0:
-            for hour, assignments in solution.schedule.items():
-                for resource, task_id in assignments:
-                    if random_task == task_id:
-                        solution.schedule[hour].remove((resource, task_id))
-                        new_resource = random.choice(capable_resources1)
-                        solution.schedule[hour].append((new_resource, task_id))
-                        solution.is_changed = True
-                        break
+        flatten_list = [(resource, task) for hour, assignments in solution.schedule.items() for resource, task in
+                        assignments]
 
-        ordered_list = []
-        for hour, assignments in solution.schedule.items():
-            for resource, task_id in assignments:
-                ordered_list.append((resource, task_id))
-        solution.schedule = self.update_schedule(ordered_list)
+        current_resource = [resource for resource, task in flatten_list if task == random_task.task_id][0]
+
+        if len(capable_resources) > 1:
+            new_resource = random.choice(list(filter(lambda x: x != current_resource, capable_resources)))
+            flatten_list = [(new_resource, task) if task == random_task.task_id else (resource, task) for
+                            resource, task in flatten_list]
+
+        solution.schedule = self.update_schedule(flatten_list)
+
+    # end of mutationSWAP ==================================================================================================================================
+
+    # SWAP mutation ==================================================================================================================================
+    def mutationTheCheapest(self, solution):
+        instance = self.algorithm.instance
+
+        random_task = instance.tasks[random.choice(list(instance.tasks.keys()))]
+
+        capable_resources = [res_id for res_id, res in instance.resources.items()
+                             if res.skills[random_task.skills_required[0]] >= random_task.skills_required[1]]
+
+        flatten_list = [(resource, task) for hour, assignments in solution.schedule.items() for resource, task in
+                        assignments]
+
+        current_resource = [resource for resource, task in flatten_list if task == random_task.task_id][0]
+        capable_resources = list(filter(lambda x: x != current_resource, capable_resources))
+
+        capable_resources_with_salary = [(res, instance.resources[res].salary) for res in capable_resources]
+
+        if len(capable_resources) > 1:
+            new_resource1 = sorted(capable_resources_with_salary, key=lambda x: x[1])[0][0]
+            new_resource2 = sorted(capable_resources_with_salary, key=lambda x: x[1])[1][0]
+
+            count_res1 = len([resource for resource, task in flatten_list if resource == new_resource1])
+            count_res2 = len([resource for resource, task in flatten_list if resource == new_resource2])
+
+            if count_res1 < count_res2:
+                new_resource = new_resource1
+            else:
+                new_resource = new_resource2
+
+            flatten_list = [(new_resource, task) if task == random_task.task_id else (resource, task) for
+                            resource, task in flatten_list]
+
+        solution.schedule = self.update_schedule(flatten_list)
+
+    # end of mutationSWAP ==================================================================================================================================
 
     # DHGA crossover proposed by Mehdi Deiranlou and Fariborz Jolai in 2009 =================================================================
     def crossover(self, parent1, parent2):
@@ -227,7 +271,48 @@ class MultiobjectiveOptimizer(Optimizer):
 
         return child
 
+    # end of crossover ==================================================================================================================================
+
+    def PMXCrossover(self, parent1, parent2):
+        child = Solution()
+        instance = self.algorithm.instance
+        flatten_parent1 = [(resource, task) for hour, assignments in parent1.schedule.items() for resource, task in
+                           assignments]
+        flatten_parent2 = [(resource, task) for hour, assignments in parent2.schedule.items() for resource, task in
+                           assignments]
+
+        # Select two random points for crossover
+        crossover_points = random.sample(instance.tasks.keys(), 2)
+        crossover_points.sort()
+
+        flatten_child = [(None, task) for (_, task) in flatten_parent1]
+
+        # middle part filled
+        flatten_child = [
+            (parent_tuple[0], child_tuple[1]) if crossover_points[0] <= child_tuple[1] <= crossover_points[1]
+            else child_tuple
+            for parent_tuple, child_tuple in zip(flatten_parent1, flatten_child)]
+
+        # first and last part filled with parent2
+
+        parent2_dict = {task: resource for resource, task in flatten_parent2}
+
+        flatten_child = [(parent2_dict[task], task) if crossover_points[0] > task or task > crossover_points[1]
+                         else (resource, task)
+                         for resource, task in flatten_child]
+
+        child.schedule = self.update_schedule(flatten_child)
+        child.is_changed = True
+
+        return child
+
     def update_schedule(self, ordered_list):
+        """
+        As a parameter it takes list of tuples (resource, task) in order of the schedule. And it builds the schedule/
+        :param ordered_list: list of tuples (resource, task) in order of the schedule
+        :return: dictionary of schedule
+        """
+
         # Dictionary to store the end times for tasks
         task_end_times = {}
 
@@ -264,8 +349,6 @@ class MultiobjectiveOptimizer(Optimizer):
         schedule = dict(sorted(schedule.items()))
 
         return schedule
-
-    # end of crossover ==================================================================================================================================
 
     def selection(self):
         """It means that for two individuals with differing nondominated ranks (different layers),
