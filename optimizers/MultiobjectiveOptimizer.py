@@ -6,8 +6,17 @@ from abstractClasses.Optimizer import Optimizer
 
 class MultiobjectiveOptimizer(Optimizer):
 
-    def __init__(self, algorithm):
+    def __init__(self, algorithm, crossover_method, mutation_method, name):
         super().__init__(algorithm)
+        self.crossover = crossover_method
+        self.mutation = mutation_method
+        self.name = name
+
+    def mutation(self, solution: Solution):
+        self.mutation(solution)
+
+    def crossover(self, parent1: Solution, parent2: Solution):
+        return self.crossover(parent1, parent2)
 
     def optimize(self):
         for generation in range(Optimizer.NUM_GENERATIONS):
@@ -19,23 +28,16 @@ class MultiobjectiveOptimizer(Optimizer):
                 parent1 = self.selection()
                 parent2 = self.selection()
                 if random.random() < Optimizer.CROSSOVER_PROBABILITY:
-                    # child1 = self.crossover(parent1, parent2)
-                    # child2 = self.crossover(parent2, parent1)
-                    child1 = self.PMXCrossover(parent1, parent2)
-                    child2 = self.PMXCrossover(parent2, parent1)
+                    child1 = self.crossover(self, parent1, parent2)
+                    child2 = self.crossover(self, parent2, parent1)
+
                 else:
                     child1 = parent1
                     child2 = parent2
 
                 if random.random() < Optimizer.MUTATION_PROBABILITY:
-                    # self.mutationSwap(child1)
-                    # self.mutationSwap(child2)
-
-                    # self.mutation(child1)
-                    # self.mutation(child2)
-
-                    self.mutationTheCheapest(child1)
-                    self.mutationTheCheapest(child2)
+                    self.mutation(self, child1)
+                    self.mutation(self, child2)
                 else:
                     child1 = parent1
                     child2 = parent2
@@ -88,8 +90,10 @@ class MultiobjectiveOptimizer(Optimizer):
                          getattr(pareto_front[i - 1], 'duration' if objective_index == 0 else 'cost')) / range_value
                 )
 
+    # MUTATIONS ==================================================================================================================================
+
     # Conflict Avoidance Mutation (CAM) proposed by Pawel B. Myszkowski, Marek E. Skowronski in 2013 =================================================================
-    def mutation(self, solution):
+    def mutationCAM(self, solution):
         instance = self.algorithm.instance
 
         # Create a copy of resource availability based on the current schedule
@@ -180,9 +184,6 @@ class MultiobjectiveOptimizer(Optimizer):
         solution.schedule = self.update_schedule(ordered_list)
         solution.is_changed = True
 
-    # end of mutation ==================================================================================================================================
-
-    # SWAP mutation ==================================================================================================================================
     def mutationSwap(self, solution):
         instance = self.algorithm.instance
 
@@ -203,9 +204,6 @@ class MultiobjectiveOptimizer(Optimizer):
 
         solution.schedule = self.update_schedule(flatten_list)
 
-    # end of mutationSWAP ==================================================================================================================================
-
-    # SWAP mutation ==================================================================================================================================
     def mutationTheCheapest(self, solution):
         instance = self.algorithm.instance
 
@@ -239,10 +237,11 @@ class MultiobjectiveOptimizer(Optimizer):
 
         solution.schedule = self.update_schedule(flatten_list)
 
-    # end of mutationSWAP ==================================================================================================================================
+    # END MUTATIONS ==================================================================================================================================
+    # CROSSOVERS ==================================================================================================================================
 
     # DHGA crossover proposed by Mehdi Deiranlou and Fariborz Jolai in 2009 =================================================================
-    def crossover(self, parent1, parent2):
+    def DHGAcrossover(self, parent1, parent2):
         child = Solution()
 
         schedule1 = [(hour, resource, task) for hour, assignments in parent1.schedule.items() for resource, task in
@@ -270,8 +269,6 @@ class MultiobjectiveOptimizer(Optimizer):
         child.is_changed = True
 
         return child
-
-    # end of crossover ==================================================================================================================================
 
     def PMXCrossover(self, parent1, parent2):
         child = Solution()
@@ -305,6 +302,8 @@ class MultiobjectiveOptimizer(Optimizer):
         child.is_changed = True
 
         return child
+
+    # END CROSSOVERS ==================================================================================================================================
 
     def update_schedule(self, ordered_list):
         """

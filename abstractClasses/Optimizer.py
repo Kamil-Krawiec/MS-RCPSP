@@ -4,7 +4,7 @@ from Solution import Solution
 
 
 class Optimizer(ABC):
-    POPULATION_SIZE = 100
+    POPULATION_SIZE = 200
     NUM_GENERATIONS = 100
     CROSSOVER_PROBABILITY = 0.7
     MUTATION_PROBABILITY = 0.1
