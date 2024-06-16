@@ -9,6 +9,7 @@ class Optimizer(ABC):
     CROSSOVER_PROBABILITY = 0.7
     MUTATION_PROBABILITY = 0.1
     TOURNAMENT_SIZE = 5
+    OTHER_MUTATION_PROBABILITY = 0.3
 
     def __init__(self, algorithm: Algorithm):
         self.algorithm = algorithm

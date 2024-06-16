@@ -1,12 +1,15 @@
-from InstanceReader import InstanceReader
-from Instance import Instance
-from algorithms import RandomAlgorithm, MultiobjectiveAlgorithm
-from optimizers import SimpleOptimizer, MultiobjectiveOptimizer
 import matplotlib.pyplot as plt
+import os
+from Solution import Solution
+from Instance import Instance
+from InstanceReader import InstanceReader
+from algorithms import MultiobjectiveAlgorithm
+from optimizers import MultiobjectiveOptimizer
 
 
-def plot(multiobjective_optimizer_arg, first_population=False):
+def plot(multiobjective_optimizer_arg, first_population=False, best_known_solution=None):
     title = multiobjective_optimizer_arg.name
+
     # Collect duration and cost values
     durations = [solution.duration for solution in multiobjective_optimizer_arg.algorithm.population]
     costs = [solution.cost for solution in multiobjective_optimizer_arg.algorithm.population]
@@ -15,12 +18,6 @@ def plot(multiobjective_optimizer_arg, first_population=False):
     pareto_front = multiobjective_optimizer_arg.pareto_front()
     pareto_durations = [solution.duration for solution in pareto_front]
     pareto_costs = [solution.cost for solution in pareto_front]
-
-    # Calculate statistics
-    avg_duration = sum(durations) / len(durations)
-    avg_cost = sum(costs) / len(costs)
-    avg_pareto_duration = sum(pareto_durations) / len(pareto_durations)
-    avg_pareto_cost = sum(pareto_costs) / len(pareto_costs)
 
     # Plot the data
     plt.figure(figsize=(10, 8))
@@ -31,6 +28,11 @@ def plot(multiobjective_optimizer_arg, first_population=False):
     # Plot Pareto front solutions separately to mark them
     plt.scatter(pareto_durations, pareto_costs, color='red', label='Pareto Front', alpha=0.8)
 
+    # Plot best-known solution if provided
+    if best_known_solution:
+        plt.scatter([best_known_solution.duration], [best_known_solution.cost], color='green', s=100,
+                    label='Best Known Solution', marker='*')
+
     # Title with algorithm name
     plt.title(f'Duration vs Cost - {title}')
     plt.xlabel('Duration')
@@ -39,12 +41,11 @@ def plot(multiobjective_optimizer_arg, first_population=False):
     plt.grid(True)
 
     # Text box with statistics
-    textstr = (f'Total Solutions: {len(durations)}\n'
-               f'Pareto Solutions: {len(pareto_durations)}\n\n'
-               f'Avg Duration (All): {avg_duration:.2f}\n'
-               f'Avg Cost (All): {avg_cost:.2f}\n\n'
-               f'Avg Duration (Pareto): {avg_pareto_duration:.2f}\n'
-               f'Avg Cost (Pareto): {avg_pareto_cost:.2f}')
+    textstr = (f'Population Size: {multiobjective_optimizer_arg.POPULATION_SIZE}\n'
+               f'Num Generations: {multiobjective_optimizer_arg.NUM_GENERATIONS}\n'
+               f'Crossover Probability: {multiobjective_optimizer_arg.CROSSOVER_PROBABILITY}\n'
+               f'Mutation Probability: {multiobjective_optimizer_arg.MUTATION_PROBABILITY}\n'
+               f'Tournament Size: {multiobjective_optimizer_arg.TOURNAMENT_SIZE}\n\n')
 
     plt.gca().text(0.95, 0.05, textstr, transform=plt.gca().transAxes, fontsize=10,
                    verticalalignment='bottom', horizontalalignment='right',
@@ -56,22 +57,38 @@ def plot(multiobjective_optimizer_arg, first_population=False):
     plt.show()
 
 
-instance_name = '200_10_135_9_D6.def'
+instance_name = '200_20_150_9_D5.def'
 
 reader = InstanceReader()
-resources, tasks, number_of_relations, number_of_skills = reader.read(f'instances/{instance_name}')
+resources, tasks, number_of_relations, number_of_skills = reader.read(f'./problem_files/instances/{instance_name}')
 
 instance = Instance(tasks, resources, number_of_relations, number_of_skills)
 
-crossovers = [MultiobjectiveOptimizer.MultiobjectiveOptimizer.DHGAcrossover,
-              MultiobjectiveOptimizer.MultiobjectiveOptimizer.PMXCrossover]
-mutations = [MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationCAM,
-             MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationSwap,
-             MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationTheCheapest]
+crossovers = [
+    MultiobjectiveOptimizer.MultiobjectiveOptimizer.DHGAcrossover,
+    MultiobjectiveOptimizer.MultiobjectiveOptimizer.PMXCrossover
+]
+
+mutations = [
+    MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationCAM,
+    MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationSwap,
+    MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationTheCheapest,
+    MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationDurationOptimized]
+
+multiobjective_algorithm = MultiobjectiveAlgorithm.MultiobjectiveAlgorithm(instance)
+#
+if os.path.isfile('problem_files/best_found_solutions_duration/' + instance_name + '.sol'):
+    best_known_solution_duration = Solution()
+    best_known_solution_duration.read_from_file(f'./problem_files/best_found_solutions_duration/{instance_name}.sol')
+    multiobjective_algorithm.execute_solution(best_known_solution_duration)
+
+else:
+    best_known_solution_duration = None
+
+first_iteration = True
 
 for crossover in crossovers:
     for mutation in mutations:
-        multiobjective_algorithm = MultiobjectiveAlgorithm.MultiobjectiveAlgorithm(instance)
         multiobjective_optimizer = MultiobjectiveOptimizer.MultiobjectiveOptimizer(multiobjective_algorithm,
                                                                                    crossover,
                                                                                    mutation,
@@ -80,11 +97,15 @@ for crossover in crossovers:
         multiobjective_optimizer.initialize()
         multiobjective_optimizer.evaluate()
 
-        plot(multiobjective_optimizer, True)
+        if first_iteration:
+            plot(multiobjective_optimizer, True, best_known_solution=best_known_solution_duration)
+            first_iteration = False
 
         multiobjective_optimizer.optimize()
 
-        plot(multiobjective_optimizer)
+        plot(multiobjective_optimizer, False, best_known_solution=best_known_solution_duration)
 
-        sol = multiobjective_optimizer.algorithm.population[0]
-        sol.save_to_file(instance_name)
+        multiobjective_algorithm.clear_population()
+
+        # best_known_solution_duration = multiobjective_optimizer.algorithm.population[0]
+        # best_known_solution_duration.save_to_file(instance_name)
