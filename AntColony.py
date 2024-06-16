@@ -23,9 +23,8 @@ class AntColonyOptimizer:
         pheromones = {}
         for task in self.instance.tasks.values():
             pheromones[task.task_id] = {}
-            for next_task in self.instance.tasks.values():
-                if next_task.task_id != task.task_id:
-                    pheromones[task.task_id][next_task.task_id] = 1.0  # Initial pheromone level
+            for resource in self.instance.resources.values():
+                pheromones[task.task_id][resource.resource_id] = 1.0
         return pheromones
 
     def run(self):
@@ -159,7 +158,7 @@ class AntColonyOptimizer:
                     if self.is_resource_suitable(resource, task):
                         
                         heuristic = self.calculate_score(task, resource) ** self.beta
-                        pheromone = sum(self.pheromones[task.task_id].values()) ** self.alpha
+                        pheromone = self.pheromones[task.task_id][resource.resource_id] ** self.alpha
                         score = heuristic * pheromone
 
                         if score < best_score:
@@ -183,16 +182,16 @@ class AntColonyOptimizer:
 
     def update_pheromones(self, solutions):
         for task_id, pheromone_levels in self.pheromones.items():
-            for next_task_id in pheromone_levels.keys():
-                self.pheromones[task_id][next_task_id] *= (1 - self.evaporation_rate)
+            for resource_id in pheromone_levels.keys():
+                self.pheromones[task_id][resource_id] *= (1 - self.evaporation_rate)
 
         for solution in solutions:
             for time in solution.schedule.keys():
                 tasks_at_time = solution.schedule[time]
                 for i in range(len(tasks_at_time) - 1):
                     current_task_id = tasks_at_time[i][1]
-                    next_task_id = tasks_at_time[i+1][1]
-                    self.pheromones[current_task_id][next_task_id] += 1.0 / self.fitness(solution)
+                    current_resource_id = tasks_at_time[i][0]
+                    self.pheromones[current_task_id][current_resource_id] += 1.0 / self.fitness(solution)
 
     def fitness(self, solution):
         duration = self.duration(solution)
