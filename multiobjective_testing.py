@@ -33,21 +33,6 @@ def plot(multiobjective_optimizer_arg, first_population=False, best_known_soluti
         plt.scatter([best_known_solution.duration], [best_known_solution.cost], color='green', s=100,
                     label='Best Known Solution', marker='*')
 
-    #
-    sol1 = Solution()
-    sol1.read_from_file("problem_files/solutions/solution1.sol")
-    multiobjective_algorithm.execute_solution(sol1)
-    print(sol1.cost)
-    print(sol1.duration)
-    plt.scatter([sol1.duration], [sol1.cost], color='orange', s=100,
-                label='Sol1', marker='X')
-
-    sol2 = Solution()
-    sol2.read_from_file("problem_files/solutions/solution2.sol")
-    multiobjective_algorithm.execute_solution(sol2)
-    plt.scatter([sol2.duration], [sol2.cost], color='orange', s=100,
-                label='Sol2', marker='o')
-    #
     # Title with algorithm name
     plt.title(f'Duration vs Cost - {title}')
     plt.xlabel('Duration')
@@ -92,9 +77,9 @@ mutations = [
 
 multiobjective_algorithm = MultiobjectiveAlgorithm.MultiobjectiveAlgorithm(instance)
 
-if os.path.isfile('problem_files/best_found_solutions_duration/' + instance_name + '.sol'):
+if os.path.isfile('problem_files/best_found_solutions_duration_10/' + instance_name + '.sol'):
     best_known_solution_duration = Solution()
-    best_known_solution_duration.read_from_file(f'./problem_files/best_found_solutions_duration/{instance_name}.sol')
+    best_known_solution_duration.read_from_file(f'./problem_files/best_found_solutions_duration_10/{instance_name}.sol')
     multiobjective_algorithm.execute_solution(best_known_solution_duration)
 
 else:
