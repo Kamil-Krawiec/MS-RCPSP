@@ -47,7 +47,7 @@ class AntColonyOptimizer:
     def construct_solutions(self):
         solutions = []
         for _ in range(self.num_ants):
-            solution = self.construct_solution()
+            solution = self.construct_solution2()
             if solution is not None:
                 solutions.append(solution)
         return solutions
@@ -59,11 +59,12 @@ class AntColonyOptimizer:
         resource_availability = {r.resource_id: 0 for r in self.instance.resources.values()}
 
         while tasks_to_schedule:
-            task, resource = self.select_task_and_resource(tasks_to_schedule, scheduled_tasks)
-            # for only duration (without cost) much better is previous solution
-            # which uses select_next_task and select_task_resource separetly
-            # this one returns much worse solutions than random for only duration
-            if task is None or resource is None:
+            task = self.select_next_task(tasks_to_schedule, scheduled_tasks)
+            if task is None:
+                return None
+
+            resource = self.select_resource_for_task(task, resource_availability)
+            if resource is None:
                 return None
 
             task_start_times = {}
@@ -74,6 +75,7 @@ class AntColonyOptimizer:
             predecessor_end_times = [task_start_times[p] + self.instance.tasks[p].duration for p in task.predecessor_ids]
             start_time = max(resource_availability[resource.resource_id], max(predecessor_end_times, default=0)+1)
 
+            # Schedule the task at the calculated start time
             solution.schedule[start_time].append((resource.resource_id, task.task_id))
             resource_availability[resource.resource_id] = start_time + task.duration
             scheduled_tasks.add(task.task_id)
@@ -116,6 +118,35 @@ class AntColonyOptimizer:
         if not available_resources:
             return None
         return min(available_resources, key=lambda r: resource_availability[r.resource_id])
+    
+    def construct_solution2(self):
+        solution = Solution()
+        tasks_to_schedule = list(self.instance.tasks.values())
+        scheduled_tasks = set()
+        resource_availability = {r.resource_id: 0 for r in self.instance.resources.values()}
+
+        while tasks_to_schedule:
+            task, resource = self.select_task_and_resource(tasks_to_schedule, scheduled_tasks)
+            # for only duration (without cost) much better is previous solution
+            # which uses select_next_task and select_task_resource separetly
+            # this one returns much worse solutions than random for only duration
+            if task is None or resource is None:
+                return None
+
+            task_start_times = {}
+            for hour, assignments in solution.schedule.items():
+                for _, task_id in assignments:
+                    task_start_times[task_id] = hour
+
+            predecessor_end_times = [task_start_times[p] + self.instance.tasks[p].duration for p in task.predecessor_ids]
+            start_time = max(resource_availability[resource.resource_id], max(predecessor_end_times, default=0)+1)
+
+            solution.schedule[start_time].append((resource.resource_id, task.task_id))
+            resource_availability[resource.resource_id] = start_time + task.duration
+            scheduled_tasks.add(task.task_id)
+            tasks_to_schedule.remove(task)
+
+        return solution
 
     def select_task_and_resource(self, tasks, scheduled_tasks):
         best_task = None
@@ -127,7 +158,9 @@ class AntColonyOptimizer:
                 for resource in self.instance.resources.values():
                     if self.is_resource_suitable(resource, task):
                         
-                        score = self.calculate_score(task, resource)
+                        heuristic = self.calculate_score(task, resource) ** self.beta
+                        pheromone = sum(self.pheromones[task.task_id].values()) ** self.alpha
+                        score = heuristic * pheromone
 
                         if score < best_score:
                             best_score = score
