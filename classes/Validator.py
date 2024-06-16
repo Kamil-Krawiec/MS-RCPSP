@@ -4,6 +4,7 @@ def validate_solution(solution, instance):
             validate_skills(solution, instance) and
             validate_precedence_relations(solution, instance))
 
+
 def validate_assignments(solution, instance):
     # Ensure all tasks are assigned to resources
     assigned_tasks = {task_id for assignments in solution.schedule.values() for _, task_id in assignments}
@@ -11,6 +12,7 @@ def validate_assignments(solution, instance):
     if assigned_tasks != all_tasks:
         print("TASK ASSIGMENT NOT VALID")
     return assigned_tasks == all_tasks
+
 
 def validate_conflicts(solution, instance):
     # Ensure no resource is assigned to more than one task at the same time
@@ -20,6 +22,7 @@ def validate_conflicts(solution, instance):
             print("CONFLICTS!")
             return False
     return True
+
 
 def validate_skills(solution, instance):
     # Ensure resources have the required skills for assigned tasks
@@ -42,9 +45,7 @@ def validate_precedence_relations(solution, instance):
 
     for task_id, task in instance.tasks.items():
         for predecessor_id in task.predecessor_ids:
-            if task_start_times.get(predecessor_id, float('inf')) + instance.tasks[predecessor_id].duration >= task_start_times.get(task_id, -1):
+            if task_start_times.get(predecessor_id, float('inf')) + instance.tasks[
+                predecessor_id].duration >= task_start_times.get(task_id, -1):
                 return False
     return True
-
-
-

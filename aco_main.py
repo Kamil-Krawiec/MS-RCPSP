@@ -1,11 +1,8 @@
 from InstanceReader import InstanceReader
 from Instance import Instance
-from algorithms.RandomAlgorithm import RandomAlgorithm
-from optimizers.SimpleOptimizer import SimpleOptimizer
 from AntColony import AntColonyOptimizer
-from Validator import validate_solution
-import os 
-import json 
+from classes.Validator import validate_solution
+import json
 
 instances = []
 reader = InstanceReader()

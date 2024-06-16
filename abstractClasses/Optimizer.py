@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
 from abstractClasses.Algorithm import Algorithm
-from Solution import Solution
+from classes.Solution import Solution
 
 
 class Optimizer(ABC):
-    POPULATION_SIZE = 100
+    POPULATION_SIZE = 200
     NUM_GENERATIONS = 100
     CROSSOVER_PROBABILITY = 0.7
     MUTATION_PROBABILITY = 0.1
     TOURNAMENT_SIZE = 5
+    OTHER_MUTATION_PROBABILITY = 0.3
 
     def __init__(self, algorithm: Algorithm):
         self.algorithm = algorithm
@@ -31,7 +32,7 @@ class Optimizer(ABC):
         # method to cross over the solution
         pass
 
-    def selection(self, population: list):
+    def selection(self):
         # method to select the best solutions from the population
         pass
 

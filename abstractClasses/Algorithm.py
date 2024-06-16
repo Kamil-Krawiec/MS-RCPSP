@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from Instance import Instance
+from classes.Instance import Instance
 
 
 class Algorithm(ABC):
@@ -11,6 +11,11 @@ class Algorithm(ABC):
         self.worst_solution = None
         self.population = []
 
+    def clear_population(self):
+        self.population = []
+        self.best_solution = None
+        self.worst_solution = None
+
     @abstractmethod
     def initialize(self, population_size):
         # method to initialize the algorithm
@@ -19,10 +24,11 @@ class Algorithm(ABC):
     def execute(self):
         for solution in filter(lambda sol: sol.is_changed, self.population):
             solution.set_fitness(self.fitness(solution))
+            solution.set_duration(self.duration(solution))
+            solution.set_cost(self.cost(solution))
 
         self.best_solution = min(self.population, key=lambda sol: sol.fitness)
         self.worst_solution = max(self.population, key=lambda sol: sol.fitness)
-
 
     def fitness(self, solution):
         duration = self.duration(solution)
@@ -43,6 +49,9 @@ class Algorithm(ABC):
 
     def execute_solution(self, solution):
         solution.set_fitness(self.fitness(solution))
+        solution.set_duration(self.duration(solution))
+        solution.set_cost(self.cost(solution))
+        solution.is_changed = False
 
     def validate_solution(self, solution):
         return (self.validate_assignments(solution) and
