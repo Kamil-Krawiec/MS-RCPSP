@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from abstractClasses.Algorithm import Algorithm
-from Solution import Solution
+from classes.Solution import Solution
 
 
 class Optimizer(ABC):

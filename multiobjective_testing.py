@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import os
-from Solution import Solution
-from Instance import Instance
-from InstanceReader import InstanceReader
+from classes.Solution import Solution
+from classes.Instance import Instance
+from classes.InstanceReader import InstanceReader
 from algorithms import MultiobjectiveAlgorithm
 from optimizers import MultiobjectiveOptimizer
 
@@ -33,6 +33,21 @@ def plot(multiobjective_optimizer_arg, first_population=False, best_known_soluti
         plt.scatter([best_known_solution.duration], [best_known_solution.cost], color='green', s=100,
                     label='Best Known Solution', marker='*')
 
+    #
+    sol1 = Solution()
+    sol1.read_from_file("problem_files/solutions/solution1.sol")
+    multiobjective_algorithm.execute_solution(sol1)
+    print(sol1.cost)
+    print(sol1.duration)
+    plt.scatter([sol1.duration], [sol1.cost], color='orange', s=100,
+                label='Sol1', marker='X')
+
+    sol2 = Solution()
+    sol2.read_from_file("problem_files/solutions/solution2.sol")
+    multiobjective_algorithm.execute_solution(sol2)
+    plt.scatter([sol2.duration], [sol2.cost], color='orange', s=100,
+                label='Sol2', marker='o')
+    #
     # Title with algorithm name
     plt.title(f'Duration vs Cost - {title}')
     plt.xlabel('Duration')
@@ -57,7 +72,7 @@ def plot(multiobjective_optimizer_arg, first_population=False, best_known_soluti
     plt.show()
 
 
-instance_name = '200_20_150_9_D5.def'
+instance_name = '200_40_130_9_D4.def'
 
 reader = InstanceReader()
 resources, tasks, number_of_relations, number_of_skills = reader.read(f'./problem_files/instances/{instance_name}')
@@ -76,7 +91,7 @@ mutations = [
     MultiobjectiveOptimizer.MultiobjectiveOptimizer.mutationDurationOptimized]
 
 multiobjective_algorithm = MultiobjectiveAlgorithm.MultiobjectiveAlgorithm(instance)
-#
+
 if os.path.isfile('problem_files/best_found_solutions_duration/' + instance_name + '.sol'):
     best_known_solution_duration = Solution()
     best_known_solution_duration.read_from_file(f'./problem_files/best_found_solutions_duration/{instance_name}.sol')
@@ -106,6 +121,3 @@ for crossover in crossovers:
         plot(multiobjective_optimizer, False, best_known_solution=best_known_solution_duration)
 
         multiobjective_algorithm.clear_population()
-
-        # best_known_solution_duration = multiobjective_optimizer.algorithm.population[0]
-        # best_known_solution_duration.save_to_file(instance_name)

@@ -1,6 +1,6 @@
 import random
 import copy
-from Solution import Solution
+from classes.Solution import Solution
 from abstractClasses.Optimizer import Optimizer
 
 
