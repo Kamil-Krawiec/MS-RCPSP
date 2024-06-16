@@ -1,5 +1,5 @@
 import random
-
+import copy
 from Solution import Solution
 from abstractClasses.Optimizer import Optimizer
 
@@ -36,6 +36,11 @@ class MultiobjectiveOptimizer(Optimizer):
                     child2 = parent2
 
                 if random.random() < Optimizer.MUTATION_PROBABILITY:
+                    if child1.is_changed:
+                        self.algorithm.execute_solution(child1)
+                    if child2.is_changed:
+                        self.algorithm.execute_solution(child2)
+
                     self.mutation(self, child1)
                     self.mutation(self, child2)
                 else:
@@ -94,6 +99,10 @@ class MultiobjectiveOptimizer(Optimizer):
 
     # Conflict Avoidance Mutation (CAM) proposed by Pawel B. Myszkowski, Marek E. Skowronski in 2013 =================================================================
     def mutationCAM(self, solution):
+        if random.random() < self.OTHER_MUTATION_PROBABILITY:
+            self.mutationTheCheapest(solution)
+            return
+
         instance = self.algorithm.instance
 
         # Create a copy of resource availability based on the current schedule
@@ -185,26 +194,53 @@ class MultiobjectiveOptimizer(Optimizer):
         solution.is_changed = True
 
     def mutationSwap(self, solution):
+        if random.random() < self.OTHER_MUTATION_PROBABILITY:
+            self.mutationCAM(solution)
+            return
+
         instance = self.algorithm.instance
 
-        random_task = instance.tasks[random.choice(list(instance.tasks.keys()))]
+        genes_to_swap = len(instance.tasks) // 10  # Number of genes to swap (10% of the total number of tasks
 
-        capable_resources = [res_id for res_id, res in instance.resources.items()
-                             if res.skills[random_task.skills_required[0]] >= random_task.skills_required[1]]
+        for _ in range(genes_to_swap):
+            # Randomly select a task to swap
+            random_task = instance.tasks[random.choice(list(instance.tasks.keys()))]
 
-        flatten_list = [(resource, task) for hour, assignments in solution.schedule.items() for resource, task in
-                        assignments]
+            # Find capable resources for the selected task
+            capable_resources = [res_id for res_id, res in instance.resources.items()
+                                 if res.skills[random_task.skills_required[0]] >= random_task.skills_required[1]]
 
-        current_resource = [resource for resource, task in flatten_list if task == random_task.task_id][0]
+            if not capable_resources:
+                continue  # Skip if no capable resources found
 
-        if len(capable_resources) > 1:
+            # Flatten schedule to list of assignments
+            flatten_list = [(resource, task) for hour, assignments in solution.schedule.items() for resource, task in
+                            assignments]
+
+            # Find the current resource assigned to the selected task
+            current_resources = [resource for resource, task in flatten_list if task == random_task.task_id]
+
+            if not current_resources:
+                continue  # Skip if no current resources found for the task
+
+            current_resource = random.choice(current_resources)
+
+            # Choose a new resource different from the current one
             new_resource = random.choice(list(filter(lambda x: x != current_resource, capable_resources)))
+
+            # Perform the swap in the flatten_list
             flatten_list = [(new_resource, task) if task == random_task.task_id else (resource, task) for
                             resource, task in flatten_list]
 
-        solution.schedule = self.update_schedule(flatten_list)
+            # Update the solution schedule with the modified flatten_list
+            solution.schedule = self.update_schedule(flatten_list)
+            solution.is_changed = True
 
     def mutationTheCheapest(self, solution):
+        if random.random() < self.OTHER_MUTATION_PROBABILITY:
+            self.mutationCAM(solution)
+            return
+
         instance = self.algorithm.instance
 
         random_task = instance.tasks[random.choice(list(instance.tasks.keys()))]
@@ -236,6 +272,124 @@ class MultiobjectiveOptimizer(Optimizer):
                             resource, task in flatten_list]
 
         solution.schedule = self.update_schedule(flatten_list)
+
+    def mutationDurationOptimized(self, solution):
+        if random.random() < self.OTHER_MUTATION_PROBABILITY:
+            self.mutationSwap(solution)
+            return
+
+        instance = self.algorithm.instance
+
+        # Identify critical tasks (tasks on the critical path or with minimal slack)
+        critical_tasks = self.identify_critical_tasks(solution)
+
+        if not critical_tasks:
+            return  # No critical tasks identified, return without making changes
+
+        # Randomly select a critical task
+        random_task = random.choice(critical_tasks)
+
+        # Find capable resources for the task
+        capable_resources = [res_id for res_id, res in instance.resources.items()
+                             if res.skills[random_task.skills_required[0]] >= random_task.skills_required[1]]
+
+        if not capable_resources:
+            return  # No capable resources found, return without making changes
+
+        # Flatten schedule to list of assignments
+        flatten_list = [(resource, task) for hour, assignments in solution.schedule.items() for resource, task in
+                        assignments]
+
+        # Find the current resource assigned to the selected task
+        current_resource = next((resource for resource, task in flatten_list if task == random_task.task_id), None)
+        capable_resources = list(filter(lambda x: x != current_resource, capable_resources))
+
+        if len(capable_resources) > 1:
+            best_solution = None
+            best_duration = float('inf')  # Initialize with a large value
+
+            for res_id in capable_resources:
+                # Create a copy of the current solution
+                temp_sol = copy.deepcopy(solution)
+
+                # Update the schedule with the new resource assignment
+                flatten_list_temp = [(res_id, task) if task == random_task.task_id else (resource, task)
+                                     for resource, task in flatten_list]
+
+                temp_sol.schedule = self.update_schedule(flatten_list_temp)
+
+                # Execute the temporary solution
+                self.algorithm.execute_solution(temp_sol)
+
+                # Compare durations
+                if temp_sol.duration < best_duration:
+                    best_duration = temp_sol.duration
+                    best_solution = temp_sol
+                elif temp_sol.duration == best_duration and temp_sol.cost < best_solution.cost:
+                    best_solution = temp_sol
+
+            if best_solution:
+                # Update the original solution with the best found solution
+                solution.schedule = best_solution.schedule
+                solution.fitness = best_solution.fitness
+                solution.duration = best_solution.duration
+                solution.cost = best_solution.cost
+                solution.is_changed = True
+
+    def identify_critical_tasks(self, solution):
+        instance = self.algorithm.instance
+        tasks = list(instance.tasks.values())
+        task_durations = {task.task_id: task.duration for task in tasks}
+
+        # Calculate earliest start times and end times for each task
+        earliest_start_times = {task.task_id: 0 for task in tasks}  # Initialize earliest start times
+
+        # Calculate earliest start times using topological sorting
+        sorted_tasks = self.topological_sort(tasks)
+
+        for task in sorted_tasks:
+            for predecessor_id in task.predecessor_ids:
+                predecessor_end_time = earliest_start_times[predecessor_id]
+
+                # Update earliest start time for current task
+                earliest_start_times[task.task_id] = max(earliest_start_times[task.task_id],
+                                                         predecessor_end_time + task_durations[predecessor_id])
+
+        # Calculate latest end times and slack for each task
+        latest_end_times = {task.task_id: earliest_start_times[task.task_id] + task_durations[task.task_id]
+                            for task in tasks}
+
+        # Calculate critical path length
+        critical_path_length = max(latest_end_times.values())
+
+        # Identify critical tasks (tasks with zero slack)
+        critical_tasks = [task for task in tasks if latest_end_times[task.task_id] == critical_path_length]
+
+        return critical_tasks
+
+    def topological_sort(self, tasks):
+        """ Perform topological sorting of tasks based on predecessors """
+        visited = set()
+        stack = []
+
+        # Create a mapping from task_id to Task object for quick lookup
+        task_map = {task.task_id: task for task in tasks}
+
+        def dfs(task_id):
+            task = task_map[task_id]
+            if task.task_id not in visited:
+                visited.add(task.task_id)
+                for predecessor_id in task.predecessor_ids:
+                    if predecessor_id in task_map:  # Ensure predecessor exists in task_map
+                        dfs(predecessor_id)
+                stack.append(task)
+
+        # Perform DFS for each task that hasn't been visited
+        for task in tasks:
+            if task.task_id not in visited:
+                dfs(task.task_id)
+
+        return stack[::-1]  # Reverse the stack to get topological order
 
     # END MUTATIONS ==================================================================================================================================
     # CROSSOVERS ==================================================================================================================================
