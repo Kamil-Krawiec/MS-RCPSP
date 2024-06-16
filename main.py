@@ -5,7 +5,7 @@ from optimizers import SimpleOptimizer, MultiobjectiveOptimizer
 import matplotlib.pyplot as plt
 
 
-def plot(multiobjective_optimizer_arg):
+def plot(multiobjective_optimizer_arg, first_population=False):
     title = multiobjective_optimizer_arg.name
     # Collect duration and cost values
     durations = [solution.duration for solution in multiobjective_optimizer_arg.algorithm.population]
@@ -50,10 +50,13 @@ def plot(multiobjective_optimizer_arg):
                    verticalalignment='bottom', horizontalalignment='right',
                    bbox=dict(facecolor='white', alpha=0.8))
 
+    if first_population:
+        plt.savefig(f'plots/{title}_first_population.png')
+    plt.savefig(f'plots/{title}.png')
     plt.show()
 
 
-instance_name = '200_20_150_9_D5.def'
+instance_name = '200_10_135_9_D6.def'
 
 reader = InstanceReader()
 resources, tasks, number_of_relations, number_of_skills = reader.read(f'instances/{instance_name}')
@@ -72,12 +75,12 @@ for crossover in crossovers:
         multiobjective_optimizer = MultiobjectiveOptimizer.MultiobjectiveOptimizer(multiobjective_algorithm,
                                                                                    crossover,
                                                                                    mutation,
-                                                                                   f'{crossover.__name__}_{mutation.__name__}')
+                                                                                   f'{crossover.__name__}_{mutation.__name__}_{instance_name}')
 
         multiobjective_optimizer.initialize()
         multiobjective_optimizer.evaluate()
 
-        # plot(multiobjective_optimizer)
+        plot(multiobjective_optimizer, True)
 
         multiobjective_optimizer.optimize()
 
