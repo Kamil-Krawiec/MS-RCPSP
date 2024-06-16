@@ -1,5 +1,5 @@
-from Resource import Resource
-from Task import Task
+from classes.Resource import Resource
+from classes.Task import Task
 
 class InstanceReader:
     """Class to read the instance file and create the instances of resources and tasks."""

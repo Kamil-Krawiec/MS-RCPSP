@@ -1,6 +1,6 @@
 from abstractClasses.Algorithm import Algorithm
-from Solution import Solution
-from random import randint, choice, shuffle
+from classes.Solution import Solution
+from random import shuffle
 
 
 class RandomAlgorithm(Algorithm):

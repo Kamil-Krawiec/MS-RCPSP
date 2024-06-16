@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from Instance import Instance
+from classes.Instance import Instance
 
 
 class Algorithm(ABC):
