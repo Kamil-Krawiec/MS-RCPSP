@@ -1,13 +1,18 @@
 import random
 from collections import defaultdict
-from Instance import Instance
-from Task import Task
-from Resource import Resource
-from Validator import validate_solution
 
 class Solution:
     def __init__(self):
         self.schedule = defaultdict(list)  # key is time, value is list of (resource, task)
+
+    def save_to_file(self, file_name):
+        with open("" + file_name + '.best_known_solution_duration', 'w') as file:
+            file.write("Hour  Resource assignments (resource ID - task ID)\n")
+            for hour, assignments in self.schedule.items():
+                file.write(f"{hour}")
+                for resource, task in assignments:
+                    file.write(f" {resource}-{task}")
+                file.write("\n")
 
 class AntColonyOptimizer:
     def __init__(self, instance, num_ants, num_iterations, alpha, beta, evaporation_rate):
@@ -27,26 +32,26 @@ class AntColonyOptimizer:
                 pheromones[task.task_id][resource.resource_id] = 1.0
         return pheromones
 
-    def run(self):
+    def run(self, version):
         best_solution = None
         best_fitness = float('inf')
 
         for iteration in range(self.num_iterations):
-            solutions = self.construct_solutions()
-            self.update_pheromones(solutions)
+            solutions = self.construct_solutions(version)
+            self.update_pheromones(solutions, version)
             for solution in solutions:
                 fitness = self.fitness(solution)
                 if fitness < best_fitness:
                     best_fitness = fitness
                     best_solution = solution
-            print(f"Iteration {iteration}: Best solution fitness = {best_fitness}")
+            # print(f"Iteration {iteration}: Best solution fitness = {best_fitness}")
 
         return best_solution
 
-    def construct_solutions(self):
+    def construct_solutions(self, version):
         solutions = []
         for _ in range(self.num_ants):
-            solution = self.construct_solution2()
+            solution = self.construct_solution() if version == 1 else self.construct_solution2()
             if solution is not None:
                 solutions.append(solution)
         return solutions
@@ -180,7 +185,7 @@ class AntColonyOptimizer:
             return False
         return True
 
-    def update_pheromones(self, solutions):
+    def update_pheromones(self, solutions, version):
         for task_id, pheromone_levels in self.pheromones.items():
             for resource_id in pheromone_levels.keys():
                 self.pheromones[task_id][resource_id] *= (1 - self.evaporation_rate)
@@ -191,9 +196,16 @@ class AntColonyOptimizer:
                 for i in range(len(tasks_at_time) - 1):
                     current_task_id = tasks_at_time[i][1]
                     current_resource_id = tasks_at_time[i][0]
-                    self.pheromones[current_task_id][current_resource_id] += 1.0 / self.fitness(solution)
+                    if version == 1:
+                        self.pheromones[current_task_id][current_resource_id] += 1.0 / self.fitness(solution)
+                    elif version == 2:
+                        self.pheromones[current_task_id][current_resource_id] += 1.0 / self.fitness2(solution)
 
     def fitness(self, solution):
+        duration = self.duration(solution)
+        return duration
+    
+    def fitness2(self, solution):
         duration = self.duration(solution)
         cost = self.cost(solution)
         return duration + cost
