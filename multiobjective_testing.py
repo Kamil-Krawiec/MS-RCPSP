@@ -45,9 +45,9 @@ for crossover in crossovers:
         multiobjective_optimizer.initialize()
         multiobjective_optimizer.evaluate()
 
-        if first_iteration:
-            plot(multiobjective_optimizer, True, best_known_solution_10=bks10, best_known_solution_13=bks13)
-            first_iteration = False
+        # if first_iteration:
+        #     plot(multiobjective_optimizer, True, best_known_solution_10=bks10, best_known_solution_13=bks13)
+        #     first_iteration = False
 
         multiobjective_optimizer.optimize()
 

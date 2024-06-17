@@ -9,7 +9,6 @@ def extract_uppercase(s):
 
 
 def generate_unique_filename(base_dir, base_name, extension="png"):
-
     if base_name.endswith(f".{extension}"):
         base_name = base_name[:-len(f".{extension}")]
 
@@ -19,6 +18,7 @@ def generate_unique_filename(base_dir, base_name, extension="png"):
         filename = f"{base_name}_{counter}.{extension}"
         counter += 1
     return os.path.join(base_dir, filename)
+
 
 def plot(multiobjective_optimizer_arg, first_population=False, best_known_solution_10=None,
          best_known_solution_13=None):
@@ -76,7 +76,7 @@ def plot(multiobjective_optimizer_arg, first_population=False, best_known_soluti
 
 
 def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_known_solution_13=None):
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(12, 10))
 
     colors = ['red', 'blue', 'green', 'purple', 'orange', 'olive', 'brown', 'pink', 'grey']
     labels = []
@@ -106,7 +106,6 @@ def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_kno
         plt.scatter([best_known_solution_10.duration], [best_known_solution_10.cost], color='black', s=100,
                     label='BKS 10', marker='*')
 
-    # Plot best-known solution if provided
     if best_known_solution_13:
         plt.scatter([best_known_solution_13.duration], [best_known_solution_13.cost], color='black', s=100,
                     label='BKS 13', marker='o')
@@ -116,7 +115,7 @@ def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_kno
     plt.xlabel('Duration')
     plt.ylabel('Cost')
     plt.xscale('log')
-    plt.legend()
+    plt.legend(loc='lower right')
     plt.grid(True)
 
     multiobjective_optimizer_arg = optimizers_arg[0]
@@ -125,17 +124,22 @@ def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_kno
                f'Num Generations: {multiobjective_optimizer_arg.NUM_GENERATIONS}\n'
                f'Crossover Probability: {multiobjective_optimizer_arg.CROSSOVER_PROBABILITY}\n'
                f'Mutation Probability: {multiobjective_optimizer_arg.MUTATION_PROBABILITY}\n'
-               f'Tournament Size: {multiobjective_optimizer_arg.TOURNAMENT_SIZE}\n\n')
+               f'Tournament Size: {multiobjective_optimizer_arg.TOURNAMENT_SIZE}\n'
+               f'Other Mutation Probability: {multiobjective_optimizer_arg.OTHER_MUTATION_PROBABILITY}\n\n')
 
-    plt.gca().text(0.95, 0.05, textstr, transform=plt.gca().transAxes, fontsize=10,
-                   verticalalignment='bottom', horizontalalignment='right',
-                   bbox=dict(facecolor='white', alpha=0.8))
+    # Adjust the figure to make room for the text box below the chart
+    plt.subplots_adjust(bottom=0.25)  # Increase bottom margin to make more space
+
+    # Add a text box below the chart
+    plt.figtext(0.5, 0.01, textstr, ha='center', fontsize=10,
+                bbox=dict(facecolor='white', alpha=0.8))
 
     # Generate unique filename
     base_dir = 'plots'
     base_name = 'all_pareto_fronts_line'
     filename = generate_unique_filename(base_dir, base_name)
-    plt.savefig(filename)
+
+    plt.savefig(filename, bbox_inches='tight')  # Ensure everything fits within the saved plot
     plt.show()
 
 
