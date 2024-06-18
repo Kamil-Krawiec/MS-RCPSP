@@ -1,14 +1,15 @@
-from InstanceReader import InstanceReader
-from Instance import Instance
+from classes.InstanceReader import InstanceReader
+from classes.Instance import Instance
 from AntColony import AntColonyOptimizer
 from classes.Validator import validate_solution
 import json
+import os 
 
 instances = []
 reader = InstanceReader()
-for file in ["200_40_130_9_D4.def"]:
+for file in os.listdir("problem_files/instances"):
     try:
-        resources, tasks, number_of_relations, number_of_skills = reader.read(f"instances/{file}")
+        resources, tasks, number_of_relations, number_of_skills = reader.read(f"problem_files/instances/{file}")
         instance = Instance(tasks, resources, number_of_relations, number_of_skills, file)
         instances.append(instance)
     except Exception as e:
@@ -34,7 +35,7 @@ for instance in instances:
     for num_ants in [1, 30]:
         for alpha, beta in [(1.0, 5.0), (5.0, 1.0), (1.0, 1.0)]:
             for evaporation in [0.1, 0.5, 0.9]:
-                aco_optimizer = AntColonyOptimizer(instance, num_ants, 1, alpha, beta, evaporation)
+                aco_optimizer = AntColonyOptimizer(instance, num_ants, 10, alpha, beta, evaporation)
                 aco_solution1 = aco_optimizer.run(1)
                 aco_solution2 = aco_optimizer.run(2)
                 if not any([
@@ -42,11 +43,11 @@ for instance in instances:
                     validate_solution(aco_solution2, instance)
                 ]):
                     print("Eror: Solution not valid!")
-                results[f"{instance.filepath},{alpha},{beta},{evaporation},1"] = (
+                results[f"{instance.filepath},{num_ants},{alpha},{beta},{evaporation},1"] = (
                     int(aco_optimizer.cost(aco_solution1)),
                     aco_optimizer.duration(aco_solution1)
                 )
-                results[f"{instance.filepath},{alpha},{beta},{evaporation},2"] = (
+                results[f"{instance.filepath},{num_ants},{alpha},{beta},{evaporation},2"] = (
                     int(aco_optimizer.cost(aco_solution2)),
                     aco_optimizer.duration(aco_solution2)
                 )
