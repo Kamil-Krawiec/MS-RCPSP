@@ -220,7 +220,7 @@ class MultiobjectiveOptimizer(Optimizer):
             # Find the current resource assigned to the selected task
             current_resources = [resource for resource, task in flatten_list if task == random_task.task_id]
 
-            if not current_resources:
+            if len(current_resources)<2:
                 continue  # Skip if no current resources found for the task
 
             current_resource = random.choice(current_resources)

@@ -71,7 +71,7 @@ def plot(multiobjective_optimizer_arg, first_population=False, best_known_soluti
 
     if first_population:
         plt.savefig(f'plots/{title}_first_population.png')
-    plt.savefig(f'plots/{title}.png')
+    plt.savefig(generate_unique_filename('plots', title, 'png'))
     plt.show()
 
 
@@ -110,15 +110,16 @@ def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_kno
         plt.scatter([best_known_solution_13.duration], [best_known_solution_13.cost], color='black', s=100,
                     label='BKS 13', marker='o')
 
+    multiobjective_optimizer_arg = optimizers_arg[0]
+
     # Title and labels
-    plt.title('Overlay of Pareto Fronts')
+    plt.title(f"Overlay of Pareto Fronts instance {'_'.join(multiobjective_optimizer_arg.name.split('_')[2:])}")
     plt.xlabel('Duration')
     plt.ylabel('Cost')
-    plt.xscale('log')
+    plt.yscale('log')
     plt.legend(loc='lower right')
     plt.grid(True)
 
-    multiobjective_optimizer_arg = optimizers_arg[0]
 
     textstr = (f'Population Size: {multiobjective_optimizer_arg.POPULATION_SIZE}\n'
                f'Num Generations: {multiobjective_optimizer_arg.NUM_GENERATIONS}\n'
