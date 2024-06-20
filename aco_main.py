@@ -1,6 +1,6 @@
 from classes.InstanceReader import InstanceReader
 from classes.Instance import Instance
-from AntColony import AntColonyOptimizer
+from algorithms.AntColony import AntColonyOptimizer
 from classes.Validator import validate_solution
 import json
 import os 
