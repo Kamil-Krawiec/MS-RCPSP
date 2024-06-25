@@ -2,7 +2,7 @@ from algorithms import MultiobjectiveAlgorithm
 from classes.Instance import Instance
 from classes.InstanceReader import InstanceReader
 from optimizers import MultiobjectiveOptimizer
-from helpful_functions.Helpfull_functions import *
+from helpful_functions.helpfull_functions import *
 
 instances = ['100_5_20_9_D3.def','100_10_27_9_D2.def', '100_20_23_9_D1.def', '200_20_150_9_D5.def', '200_40_130_9_D4.def', '200_40_90_9.def', ]
 
