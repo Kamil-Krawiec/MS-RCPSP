@@ -72,7 +72,7 @@ def plot(multiobjective_optimizer_arg, first_population=False, best_known_soluti
 
     if first_population:
         plt.savefig(f'plots/{title}_first_population.png')
-    plt.savefig(generate_unique_filename('plots', title, 'png'))
+    plt.savefig(generate_unique_filename('../plots', title, 'png'))
     plt.show()
 
 
@@ -114,8 +114,8 @@ def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_kno
     multiobjective_optimizer_arg = optimizers_arg[0]
 
     instance_name = '_'.join(multiobjective_optimizer_arg.name.split('_')[2:])
-    ant_colony_duration = parse_data('problem_files/solutions/duration.csv', instance_name + '.def')
-    ant_colony_cost = parse_data('problem_files/solutions/cost.csv', instance_name + '.def')
+    ant_colony_duration = parse_data('../problem_files/solutions/duration.csv', instance_name + '.def')
+    ant_colony_cost = parse_data('../problem_files/solutions/cost.csv', instance_name + '.def')
 
     if ant_colony_duration and ant_colony_cost:
         plt.scatter([ant_colony_duration.duration], [ant_colony_duration.cost], color='black', s=100,
@@ -146,7 +146,7 @@ def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_kno
                 bbox=dict(facecolor='white', alpha=0.8))
 
     # Generate unique filename
-    base_dir = 'plots'
+    base_dir = '../plots'
     base_name = 'all_pareto_fronts_line'
     filename = generate_unique_filename(base_dir, base_name)
 
