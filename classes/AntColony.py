@@ -6,7 +6,7 @@ class Solution:
         self.schedule = defaultdict(list)  # key is time, value is list of (resource, task)
 
     def save_to_file(self, file_name):
-        with open("" + file_name + '.best_known_solution_duration', 'w') as file:
+        with open("" + file_name + '.best_known_solution_duration_10', 'w') as file:
             file.write("Hour  Resource assignments (resource ID - task ID)\n")
             for hour, assignments in self.schedule.items():
                 file.write(f"{hour}")

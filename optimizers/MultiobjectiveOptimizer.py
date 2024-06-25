@@ -100,7 +100,7 @@ class MultiobjectiveOptimizer(Optimizer):
     # Conflict Avoidance Mutation (CAM) proposed by Pawel B. Myszkowski, Marek E. Skowronski in 2013 =================================================================
     def mutationCAM(self, solution):
         if random.random() < self.OTHER_MUTATION_PROBABILITY:
-            self.mutationTheCheapest(solution)
+            self.mutationCHEAPEST(solution)
             return
 
         instance = self.algorithm.instance
@@ -193,7 +193,7 @@ class MultiobjectiveOptimizer(Optimizer):
         solution.schedule = self.update_schedule(ordered_list)
         solution.is_changed = True
 
-    def mutationSwap(self, solution):
+    def mutationSWAP(self, solution):
         if random.random() < self.OTHER_MUTATION_PROBABILITY:
             self.mutationCAM(solution)
             return
@@ -220,7 +220,7 @@ class MultiobjectiveOptimizer(Optimizer):
             # Find the current resource assigned to the selected task
             current_resources = [resource for resource, task in flatten_list if task == random_task.task_id]
 
-            if not current_resources:
+            if len(current_resources)<2:
                 continue  # Skip if no current resources found for the task
 
             current_resource = random.choice(current_resources)
@@ -236,7 +236,7 @@ class MultiobjectiveOptimizer(Optimizer):
             solution.schedule = self.update_schedule(flatten_list)
             solution.is_changed = True
 
-    def mutationTheCheapest(self, solution):
+    def mutationCHEAPEST(self, solution):
         if random.random() < self.OTHER_MUTATION_PROBABILITY:
             self.mutationCAM(solution)
             return
@@ -273,9 +273,10 @@ class MultiobjectiveOptimizer(Optimizer):
 
         solution.schedule = self.update_schedule(flatten_list)
 
-    def mutationDurationOptimized(self, solution):
+    # critical path optimization - optimization based on duration
+    def mutationCPO(self, solution):
         if random.random() < self.OTHER_MUTATION_PROBABILITY:
-            self.mutationSwap(solution)
+            self.mutationSWAP(solution)
             return
 
         instance = self.algorithm.instance
