@@ -19,7 +19,7 @@ moa.execute_solution(best1)
 moa.execute_solution(best2)
 
 
-df = pd.read_csv("data.csv")
+df = pd.read_csv("../problem_files/solutions/data.csv")
 
 filtered_df = df[df['instance'] == instance_name]
 

@@ -8,7 +8,7 @@ keys = ['instance', 'num_ants', 'alpha', 'beta', 'version']  # Get keys from the
 keys.extend(["cost", "duration"])  # Add "cost" and "duration"
 
 # Open the CSV file for writing (with newline='') to avoid potential issues
-with open("data.csv", "w", newline="") as csvfile:
+with open("../problem_files/solutions/data.csv", "w", newline="") as csvfile:
   writer = csv.writer(csvfile)
   writer.writerow(keys)  # Write header row
 

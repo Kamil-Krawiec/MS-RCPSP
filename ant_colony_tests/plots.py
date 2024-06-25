@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("data.csv")
+df = pd.read_csv("../problem_files/solutions/data.csv")
 
 grouped_data = df.groupby(['num_ants', 'version'])
 
