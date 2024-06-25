@@ -6,7 +6,8 @@
 
 ## Based on research
 
-http://imopse.ii.pwr.wroc.pl/psp_problem.html
+[imopse MS-RCPSP](http://imopse.ii.pwr.wroc.pl/psp_problem.html)
+
 
 ## Documentation
 
