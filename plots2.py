@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from .algorithms.MultiobjectiveAlgorithm import MultiobjectiveAlgorithm
-from .classes.Solution import Solution
-from .classes.InstanceReader import InstanceReader
-from .classes.Instance import Instance
+from algorithms.MultiobjectiveAlgorithm import MultiobjectiveAlgorithm
+from classes.Solution import Solution
+from classes.InstanceReader import InstanceReader
+from classes.Instance import Instance
 import pandas as pd 
 
 instance_name = "200_20_150_9_D5.def"
@@ -18,8 +18,8 @@ best2.read_from_file(f"problem_files/best_found_solutions_duration_13/{instance_
 moa.execute_solution(best1)
 moa.execute_solution(best2)
 
-df = pd.read_csv("../problem_files/solutions/data.csv")
 
+df = pd.read_csv("data.csv")
 
 filtered_df = df[df['instance'] == instance_name]
 
