@@ -4,12 +4,12 @@ from classes.Solution import Solution
 
 
 class Optimizer(ABC):
-    POPULATION_SIZE = 200
-    NUM_GENERATIONS = 100
+    POPULATION_SIZE = 500
+    NUM_GENERATIONS = 120
     CROSSOVER_PROBABILITY = 0.7
-    MUTATION_PROBABILITY = 0.1
+    MUTATION_PROBABILITY = 0.13
     TOURNAMENT_SIZE = 5
-    OTHER_MUTATION_PROBABILITY = 0.3
+    OTHER_MUTATION_PROBABILITY = 0.35
 
     def __init__(self, algorithm: Algorithm):
         self.algorithm = algorithm

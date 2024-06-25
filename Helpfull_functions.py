@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import copy
 from classes.Solution import Solution
+import pandas as pd
 
 
 def extract_uppercase(s):
@@ -112,14 +113,23 @@ def plot_all_pareto_fronts(optimizers_arg, best_known_solution_10=None, best_kno
 
     multiobjective_optimizer_arg = optimizers_arg[0]
 
+    instance_name = '_'.join(multiobjective_optimizer_arg.name.split('_')[2:])
+    ant_colony_duration = parse_data('problem_files/solutions/duration.csv', instance_name + '.def')
+    ant_colony_cost = parse_data('problem_files/solutions/cost.csv', instance_name + '.def')
+
+    if ant_colony_duration and ant_colony_cost:
+        plt.scatter([ant_colony_duration.duration], [ant_colony_duration.cost], color='black', s=100,
+                    label='Ant colony duration', marker='s')
+        plt.scatter([ant_colony_cost.duration], [ant_colony_cost.cost], color='black', s=100,
+                    label='Ant colony cost', marker='s')
+
     # Title and labels
-    plt.title(f"Overlay of Pareto Fronts instance {'_'.join(multiobjective_optimizer_arg.name.split('_')[2:])}")
+    plt.title(f"Overlay of Pareto Fronts instance {instance_name}")
     plt.xlabel('Duration')
     plt.ylabel('Cost')
     plt.yscale('log')
     plt.legend(loc='lower right')
     plt.grid(True)
-
 
     textstr = (f'Population Size: {multiobjective_optimizer_arg.POPULATION_SIZE}\n'
                f'Num Generations: {multiobjective_optimizer_arg.NUM_GENERATIONS}\n'
@@ -162,3 +172,15 @@ def read_best_known_solutions(multiobjective_algorithm, instance_name):
         best_known_solution_duration_13 = None
 
     return best_known_solution_duration_10, best_known_solution_duration_13
+
+
+def parse_data(file_path, instance_name):
+    # Read CSV file into DataFrame
+    df = pd.read_csv(file_path)
+
+    # Filter rows by instance name
+    instance_rows = df[df['instance'] == instance_name]
+    solution = Solution()
+    solution.set_cost(instance_rows['cost'])
+    solution.set_duration(instance_rows['duration'])
+    return solution

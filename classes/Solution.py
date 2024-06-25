@@ -12,6 +12,7 @@ class Solution():
         self.crowding_distance = 0
         self.rank = -1
 
+
     def set_fitness(self, fitness_value):
         self.fitness = fitness_value
         self.is_changed = True

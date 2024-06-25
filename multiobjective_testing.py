@@ -7,7 +7,7 @@ from classes.Solution import Solution
 from optimizers import MultiobjectiveOptimizer
 from Helpfull_functions import *
 
-instances = ['100_5_20_9_D3.def', '100_10_27_9_D2.def', '100_10_48_15.def', '100_20_23_9_D1.def', '100_20_65_15.def', '200_10_85_15.def', '200_40_130_9_D4.def', '200_40_90_9.def', ]
+instances = ['100_5_20_9_D3.def','100_10_27_9_D2.def', '100_20_23_9_D1.def', '200_20_150_9_D5.def', '200_40_130_9_D4.def', '200_40_90_9.def', ]
 
 for instance_name in instances:
 
@@ -58,7 +58,7 @@ for instance_name in instances:
 
             multiobjective_optimizer.optimize()
 
-            plot(multiobjective_optimizer, False, best_known_solution_10=bks10, best_known_solution_13=bks13)
+            # plot(multiobjective_optimizer, False, best_known_solution_10=bks10, best_known_solution_13=bks13)
             optimizers.append(copy.deepcopy(multiobjective_optimizer))
 
             multiobjective_algorithm.clear_population()
